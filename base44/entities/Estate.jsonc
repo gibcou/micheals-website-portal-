@@ -1,0 +1,85 @@
+{
+  "name": "Estate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Estate Name"
+    },
+    "address": {
+      "type": "string",
+      "title": "Address"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Primary residence",
+        "Second home / vacation estate",
+        "Investment property",
+        "Commercial property",
+        "Land / ranch"
+      ],
+      "title": "Estate Type"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "onboarding",
+        "paused"
+      ],
+      "default": "onboarding",
+      "title": "Status"
+    },
+    "client_id": {
+      "type": "string",
+      "title": "Client User ID"
+    },
+    "advisor_name": {
+      "type": "string",
+      "title": "Advisor Name"
+    },
+    "monthly_retainer": {
+      "type": "number",
+      "title": "Monthly Retainer"
+    },
+    "notes": {
+      "type": "string",
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "name",
+    "address",
+    "client_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.client_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

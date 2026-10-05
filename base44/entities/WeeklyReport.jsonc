@@ -1,0 +1,77 @@
+{
+  "name": "WeeklyReport",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "week_of": {
+      "type": "string",
+      "format": "date",
+      "title": "Week Of"
+    },
+    "estate_id": {
+      "type": "string",
+      "title": "Estate ID"
+    },
+    "estate_name": {
+      "type": "string",
+      "title": "Estate Name"
+    },
+    "client_id": {
+      "type": "string",
+      "title": "Client User ID"
+    },
+    "summary": {
+      "type": "string",
+      "title": "Summary"
+    },
+    "actions_taken": {
+      "type": "string",
+      "title": "Actions Taken"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "title": "Photos"
+    }
+  },
+  "required": [
+    "title",
+    "week_of",
+    "estate_id",
+    "client_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.client_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "overdue_invoice_reminders",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "scan_and_notify": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendOverdueInvoiceReminders"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Send overdue reminders",
+            "description": "Emails clients with invoices unpaid 7+ days past due"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 9 * * *",
+      "one_time_date": null,
+      "timezone": "America/Denver",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Overdue Invoice Reminders",
+  "description": "Daily check for invoices more than seven days past due; emails each client one payment reminder per invoice"
+}

@@ -1,0 +1,48 @@
+{
+  "name": "Notification",
+  "type": "object",
+  "properties": {
+    "recipient_id": {
+      "type": "string",
+      "title": "Recipient User ID"
+    },
+    "title": {
+      "type": "string",
+      "title": "Title"
+    },
+    "body": {
+      "type": "string",
+      "title": "Body"
+    },
+    "link": {
+      "type": "string",
+      "title": "Link"
+    },
+    "read": {
+      "type": "boolean",
+      "default": false,
+      "title": "Read"
+    }
+  },
+  "required": [
+    "recipient_id",
+    "title",
+    "body"
+  ],
+  "rls": {
+    "read": {
+      "data.recipient_id": "{{user.id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "data.recipient_id": "{{user.id}}"
+    },
+    "delete": {
+      "data.recipient_id": "{{user.id}}"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+<mjml>
+  <mj-head>
+    <mj-title>Service request update: {{request_title}}</mj-title>
+    <mj-preview>Your request "{{request_title}}" is now {{status}}.</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="Arial, Helvetica, sans-serif" />
+      <mj-section background-color="#ffffff" padding="0 36px" />
+      <mj-text color="#000000" font-size="15px" line-height="1.6" padding="0" />
+      <mj-button background-color="#000000" color="#ffffff" border-radius="4px" font-weight="700" inner-padding="14px 28px" align="left" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f6f7f9">
+    <mj-section background-color="#111111" padding="20px 36px">
+      <mj-column>
+        <mj-image src="https://media.base44.com/images/public/6ac2e5c51ff96fcb685c61a3/cb4582fe1_logo.png" alt="Prestige Estate Management" align="left" height="32" />
+      </mj-column>
+    </mj-section>
+    <mj-section padding="40px 36px 8px">
+      <mj-column>
+        <mj-text font-size="28px" font-weight="700" line-height="1.2">Request update, {{client_name}}</mj-text>
+        <mj-text color="#6b7280" padding-top="8px">Here is the latest status of your service request.</mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section padding="24px 36px">
+      <mj-column background-color="#ffffff" border="1px solid #e5e7eb" border-radius="4px" padding="24px">
+        <mj-text font-size="18px" font-weight="700">{{request_title}}</mj-text>
+        <mj-text color="#6b7280" padding-top="4px">{{estate_name}}</mj-text>
+        <mj-divider border-color="#e5e7eb" padding="16px 0" />
+        <mj-text>New status: <strong style="text-transform: capitalize;">{{status}}</strong></mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-section padding="0 36px 24px">
+      <mj-column>
+        <mj-button href="https://strange-client-core-connect.base44.app/portal/requests">View your requests</mj-button>
+      </mj-column>
+    </mj-section>
+    <mj-section background-color="#111111" padding="24px 36px">
+      <mj-column>
+        <mj-text color="#9ca3af" font-size="12px">Prestige Estate Management</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
