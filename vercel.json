@@ -1,3 +1,8 @@
 {
-  "outputDirectory": "dist"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://base44.app/api/:path*" },
+    { "source": "/ws-user-apps/:path*", "destination": "https://base44.app/ws-user-apps/:path*" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
 }
