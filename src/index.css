@@ -58,11 +58,47 @@
   }
 }
 
+@layer base {
+  button,
+  [role="menuitem"],
+  [role="menu"],
+  nav a {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (max-width: 767px) {
+    button {
+      min-height: 44px;
+    }
+    * {
+      scrollbar-width: none;
+    }
+    *::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+  }
+}
+
 @layer utilities {
   .font-display {
     font-family: var(--font-display);
   }
   .gold-line {
     background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

@@ -19,6 +19,9 @@ import ClientRequests from '@/pages/portal/ClientRequests';
 import ClientReports from '@/pages/portal/ClientReports';
 import ClientInvoices from '@/pages/portal/ClientInvoices';
 import ClientMessages from '@/pages/portal/ClientMessages';
+import ClientInvoiceDetail from '@/pages/portal/ClientInvoiceDetail';
+import ClientReportDetail from '@/pages/portal/ClientReportDetail';
+import AccountSettings from '@/pages/portal/AccountSettings';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminEstates from '@/pages/admin/AdminEstates';
 import AdminRequests from '@/pages/admin/AdminRequests';
@@ -65,6 +68,9 @@ const AuthenticatedApp = () => {
           <Route path="/portal/reports" element={<ClientReports />} />
           <Route path="/portal/invoices" element={<ClientInvoices />} />
           <Route path="/portal/messages" element={<ClientMessages />} />
+          <Route path="/portal/invoices/:id" element={<ClientInvoiceDetail />} />
+          <Route path="/portal/reports/:id" element={<ClientReportDetail />} />
+          <Route path="/portal/settings" element={<AccountSettings />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/estates" element={<AdminEstates />} />
           <Route path="/admin/requests" element={<AdminRequests />} />

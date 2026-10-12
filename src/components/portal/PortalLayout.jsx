@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import NotificationBell from "@/components/portal/NotificationBell";
-import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, X, Eye, ShieldCheck, Flame } from "lucide-react";
+import BottomNav from "@/components/portal/BottomNav";
+import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, X, Eye, ShieldCheck, Flame, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const clientNav = [
@@ -11,6 +12,7 @@ const clientNav = [
   { to: "/portal/reports", label: "Weekly Reports", icon: FileText },
   { to: "/portal/invoices", label: "Invoices", icon: CreditCard },
   { to: "/portal/messages", label: "Messages", icon: MessageSquare },
+  { to: "/portal/settings", label: "Settings", icon: Settings, tab: "Profile" },
 ];
 
 const adminNav = [
@@ -121,7 +123,7 @@ export default function PortalLayout() {
 
       {/* Main */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <header className="lg:hidden sticky top-0 z-20 flex items-center justify-between px-4 h-14 border-b border-border bg-card">
+        <header className="lg:hidden sticky top-0 z-20 flex items-center justify-between px-4 min-h-14 pt-safe border-b border-border bg-card">
           <button onClick={() => setMobileOpen(true)} className="p-2 text-foreground">
             <Menu className="h-5 w-5" />
           </button>
@@ -132,10 +134,12 @@ export default function PortalLayout() {
           <NotificationBell />
         </header>
 
-        <main className="flex-1 px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-6xl w-full mx-auto animate-fade-in">
+        <main className="flex-1 px-4 sm:px-6 lg:px-10 pt-6 pb-28 sm:pt-8 sm:pb-28 md:pb-8 max-w-6xl w-full mx-auto animate-fade-in">
           <Outlet />
         </main>
       </div>
+
+      {showClientPortal && <BottomNav items={clientNav} />}
     </div>
   );
 }
