@@ -72,9 +72,9 @@ export function EmptyState({ icon: Icon, title, description, action }) {
   );
 }
 
-export function SectionCard({ children, className }) {
+export function SectionCard({ children, className, ...props }) {
   return (
-    <div className={cn("rounded-lg border border-border bg-card", className)}>
+    <div className={cn("rounded-lg border border-border bg-card", className)} {...props}>
       {children}
     </div>
   );

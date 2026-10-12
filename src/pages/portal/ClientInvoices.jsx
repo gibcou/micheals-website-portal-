@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { CreditCard, Calendar } from "lucide-react";
+import PullToRefresh from "@/components/portal/PullToRefresh";
 
 export default function ClientInvoices() {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ export default function ClientInvoices() {
         subtitle="Your engagement statements and payment records."
       />
 
+      <PullToRefresh onRefresh={load}>
       {invoices.length === 0 ? (
         <SectionCard>
           <EmptyState icon={CreditCard} title="No invoices" description="Your billing statements will appear here." />
@@ -56,6 +58,7 @@ export default function ClientInvoices() {
           </div>
         </SectionCard>
       )}
+      </PullToRefresh>
     </div>
   );
 }

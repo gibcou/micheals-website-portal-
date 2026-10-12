@@ -26,11 +26,20 @@ export default function ClientInvoiceDetail() {
     })();
   }, [id]);
 
+  // Optimistic update: the status flips to paid instantly, then the record is written
   const handlePay = async () => {
     setPaying(true);
-    await base44.entities.Invoice.update(invoice.id, { status: "paid", paid_date: new Date().toISOString().split("T")[0] });
-    setInvoice({ ...invoice, status: "paid", paid_date: new Date().toISOString().split("T")[0] });
-    setPaying(false);
+    const paidDate = new Date().toISOString().split("T")[0];
+    const prev = invoice;
+    setInvoice({ ...invoice, status: "paid", paid_date: paidDate });
+    try {
+      await base44.entities.Invoice.update(invoice.id, { status: "paid", paid_date: paidDate });
+    } catch (e) {
+      setInvoice(prev);
+      console.error(e);
+    } finally {
+      setPaying(false);
+    }
   };
 
   if (loading) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;

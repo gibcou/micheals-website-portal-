@@ -5,12 +5,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import MobileSelect from "@/components/portal/MobileSelect";
 import { Loader2 } from "lucide-react";
 
 // Shared "New Service Request" dialog for the client portal.
 export default function RequestFormDialog({ estate, open, onOpenChange, onCreated }) {
   const [submitting, setSubmitting] = useState(false);
+  const [category, setCategory] = useState("Maintenance");
+  const [priority, setPriority] = useState("medium");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,8 +27,8 @@ export default function RequestFormDialog({ estate, open, onOpenChange, onCreate
     await base44.entities.ServiceRequest.create({
       title: form.get("title"),
       description: form.get("description"),
-      category: form.get("category"),
-      priority: form.get("priority"),
+      category,
+      priority,
       estate_id: estate.id,
       estate_name: estate.name,
       client_id: estate.client_id,
@@ -34,6 +36,8 @@ export default function RequestFormDialog({ estate, open, onOpenChange, onCreate
       photo: photo_uri,
     });
     setSubmitting(false);
+    setCategory("Maintenance");
+    setPriority("medium");
     onOpenChange(false);
     if (onCreated) onCreated();
   };
@@ -54,27 +58,31 @@ export default function RequestFormDialog({ estate, open, onOpenChange, onCreate
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select name="category" defaultValue="Maintenance">
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Maintenance">Maintenance</SelectItem>
-                  <SelectItem value="Cleaning">Cleaning</SelectItem>
-                  <SelectItem value="Property">Property</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={category}
+                onValueChange={setCategory}
+                placeholder="Category"
+                options={[
+                  { value: "Maintenance", label: "Maintenance" },
+                  { value: "Cleaning", label: "Cleaning" },
+                  { value: "Property", label: "Property" },
+                  { value: "Other", label: "Other" },
+                ]}
+              />
             </div>
             <div className="space-y-2">
               <Label>Priority</Label>
-              <Select name="priority" defaultValue="medium">
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                </SelectContent>
-              </Select>
+              <MobileSelect
+                value={priority}
+                onValueChange={setPriority}
+                placeholder="Priority"
+                options={[
+                  { value: "low", label: "Low" },
+                  { value: "medium", label: "Medium" },
+                  { value: "high", label: "High" },
+                  { value: "urgent", label: "Urgent" },
+                ]}
+              />
             </div>
           </div>
           <div className="space-y-2">

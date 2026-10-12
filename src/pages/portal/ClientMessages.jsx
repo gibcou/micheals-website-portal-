@@ -11,6 +11,7 @@ export default function ClientMessages() {
   const [loading, setLoading] = useState(true);
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [pending, setPending] = useState([]);
   const scrollRef = useRef(null);
 
   const load = async () => {
@@ -34,20 +35,32 @@ export default function ClientMessages() {
   }, [estate?.id]);
   useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  // Optimistic send: the bubble appears instantly, then reconciles with the server
   const handleSend = async () => {
     if (!body.trim() || !estate) return;
-    setSending(true);
-    const created = await base44.entities.Message.create({
-      estate_id: estate.id,
-      client_id: estate.client_id,
-      body: body.trim(),
-      from_role: "client",
-      read: false,
-    });
+    const text = body.trim();
+    const temp = { id: `temp-${Date.now()}`, body: text, from_role: "client", created_date: new Date().toISOString(), pending: true };
+    setPending((p) => [...p, temp]);
     setBody("");
-    setSending(false);
-    load();
-    base44.functions.invoke("notifyNewMessage", { message_id: created.id }).catch((e) => console.error(e));
+    setSending(true);
+    try {
+      const created = await base44.entities.Message.create({
+        estate_id: estate.id,
+        client_id: estate.client_id,
+        body: text,
+        from_role: "client",
+        read: false,
+      });
+      setPending((p) => p.filter((m) => m.id !== temp.id));
+      load();
+      base44.functions.invoke("notifyNewMessage", { message_id: created.id }).catch((e) => console.error(e));
+    } catch (e) {
+      setPending((p) => p.filter((m) => m.id !== temp.id));
+      setBody(text);
+      console.error(e);
+    } finally {
+      setSending(false);
+    }
   };
 
   if (loading) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;
@@ -65,11 +78,11 @@ export default function ClientMessages() {
           <EmptyState icon={MessageSquare} title="No messages yet" description="Start the conversation with your advisor." />
         ) : (
           <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            {messages.map((m) => {
+            {[...messages, ...pending].map((m) => {
               const mine = m.from_role === "client";
               return (
                 <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[75%] rounded-lg px-4 py-3 ${mine ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}>
+                  <div className={`max-w-[75%] rounded-lg px-4 py-3 ${mine ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}${m.pending ? " opacity-60" : ""}`}>
                     <p className="text-sm whitespace-pre-wrap">{m.body}</p>
                     <p className={`text-[10px] mt-1.5 ${mine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                       {new Date(m.created_date).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}

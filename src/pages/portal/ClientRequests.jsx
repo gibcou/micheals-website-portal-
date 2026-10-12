@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import RequestFormDialog from "@/components/portal/RequestFormDialog";
 import RequestPhoto from "@/components/portal/RequestPhoto";
 import { Plus, ClipboardList } from "lucide-react";
+import PullToRefresh from "@/components/portal/PullToRefresh";
 
 export default function ClientRequests() {
   const [requests, setRequests] = useState([]);
@@ -36,6 +37,7 @@ export default function ClientRequests() {
         action={<Button onClick={() => setOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4 mr-1" />New Request</Button>}
       />
 
+      <PullToRefresh onRefresh={load}>
       {requests.length === 0 ? (
         <SectionCard>
           <EmptyState
@@ -70,6 +72,7 @@ export default function ClientRequests() {
           </div>
         </SectionCard>
       )}
+      </PullToRefresh>
 
       <RequestFormDialog
         estate={estate}
