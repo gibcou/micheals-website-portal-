@@ -3,7 +3,7 @@ import { supabase } from './supabase';
 export const getConversations = async () => {
   const { data, error } = await supabase
     .from('conversations')
-    .select('*, last_message:messages(body, created_at)')
+    .select('*, last_message:messages(body, created_at), conversation_participants(user_id, profiles(full_name))')
     .order('created_at', { foreignTable: 'messages', ascending: false })
     .limit(1, { foreignTable: 'messages' });
 
