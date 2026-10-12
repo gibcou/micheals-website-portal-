@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate, useLocation, Navigate } from "react-route
 import { supabase } from "@/lib/supabase/client";
 import NotificationBell from "@/components/portal/NotificationBell";
 import BottomNav from "@/components/portal/BottomNav";
-import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, X, Eye, ShieldCheck, Flame, Settings } from "lucide-react";
+import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, Eye, ShieldCheck, Flame, Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const clientNav = [
@@ -17,6 +17,7 @@ const clientNav = [
 
 const adminNav = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/clients", label: "Clients", icon: Users },
   { to: "/admin/estates", label: "Estates", icon: Building2 },
   { to: "/admin/requests", label: "Service Requests", icon: ClipboardList },
   { to: "/admin/active-requests", label: "Needs Attention", icon: Flame },
