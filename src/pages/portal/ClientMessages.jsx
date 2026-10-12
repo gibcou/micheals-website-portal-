@@ -38,11 +38,10 @@ export default function ClientMessages() {
 
   useEffect(() => {
     if (selectedConversation) {
-      const subscription = subscribeToMessages(selectedConversation.id, (newMessage) => {
-        queryClient.setQueryData(["messages", selectedConversation.id], (oldData) => {
-          if (!oldData) return [newMessage];
-          return [...oldData, newMessage];
-        });
+      // Refetch (rather than splice the raw payload in) so the sender's
+      // profile join is populated for the new message too.
+      const subscription = subscribeToMessages(selectedConversation.id, () => {
+        queryClient.invalidateQueries(["messages", selectedConversation.id]);
       });
       return () => subscription.unsubscribe();
     }
@@ -116,11 +115,11 @@ export default function ClientMessages() {
                   return (
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[75%] rounded-lg px-4 py-3 ${mine ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}>
-                        <p className="text-sm font-semibold">{m.sender.full_name}</p>
+                        <p className="text-sm font-semibold">{m.sender?.full_name || "Unknown"}</p>
                         <p className="text-sm whitespace-pre-wrap">{m.body}</p>
                         {m.attachment_path && (
                           <a
-                            href={supabase.storage.from("chat-attachments").getPublicUrl(m.attachment_path).publicURL}
+                            href={supabase.storage.from("chat-attachments").getPublicUrl(m.attachment_path).data.publicUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm underline mt-2 block"

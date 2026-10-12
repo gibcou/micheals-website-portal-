@@ -15,7 +15,13 @@ export const getConversations = async () => {
 };
 
 export const createConversation = async (title, participantIds) => {
-  const { data, error } = await supabase.from('conversations').insert([{ title }]).single();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { data, error } = await supabase
+    .from('conversations')
+    .insert([{ title, created_by: user.id }])
+    .select()
+    .single();
 
   if (error) {
     throw new Error(error.message);

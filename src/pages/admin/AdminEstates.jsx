@@ -14,6 +14,7 @@ const emptyForm = { name: "", address: "", type: "Primary residence", status: "o
 
 export default function AdminEstates() {
   const [estates, setEstates] = useState([]);
+  const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -22,9 +23,14 @@ export default function AdminEstates() {
   const [deleting, setDeleting] = useState(null);
 
   const load = async () => {
-    const { data, error } = await supabase.from('estates').select('*').order('created_at', { ascending: false }).limit(50);
+    const [{ data, error }, { data: clientData, error: clientError }] = await Promise.all([
+      supabase.from('estates').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('profiles').select('id, full_name, email').eq('role', 'client').order('full_name'),
+    ]);
     if (error) console.error("Error loading estates", error);
+    if (clientError) console.error("Error loading clients", clientError);
     setEstates(data || []);
+    setClients(clientData || []);
     setLoading(false);
   };
 
@@ -102,9 +108,18 @@ export default function AdminEstates() {
             <div className="space-y-2"><Label htmlFor="name">Estate Name</Label><Input id="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
             <div className="space-y-2"><Label htmlFor="address">Address</Label><Input id="address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} required /></div>
             <div className="space-y-2">
-              <Label>Client User ID</Label>
-              <Input value={form.client_id} onChange={(e) => setForm({ ...form, client_id: e.target.value })} placeholder="The client's user ID (from App Users)" required />
-              <p className="text-xs text-muted-foreground">Find this in the App Users dashboard. The client will only see this estate's data.</p>
+              <Label>Client</Label>
+              <Select value={form.client_id} onValueChange={(v) => setForm({ ...form, client_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Select a client" /></SelectTrigger>
+                <SelectContent>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.full_name || c.email || c.id}{c.email ? ` (${c.email})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Only this client will see this estate's data.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2"><Label>Type</Label><Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>
@@ -121,7 +136,7 @@ export default function AdminEstates() {
             <div className="space-y-2"><Label htmlFor="notes">Notes</Label><Textarea id="notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={3} /></div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90">{saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}{editing ? "Save Changes" : "Create Estate"}</Button>
+              <Button type="submit" disabled={saving || !form.client_id} className="bg-primary text-primary-foreground hover:bg-primary/90">{saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}{editing ? "Save Changes" : "Create Estate"}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

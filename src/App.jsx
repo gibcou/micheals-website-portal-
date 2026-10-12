@@ -17,6 +17,7 @@ import ClientInvoiceDetail from '@/pages/portal/ClientInvoiceDetail';
 import ClientReportDetail from '@/pages/portal/ClientReportDetail';
 import AccountSettings from '@/pages/portal/AccountSettings';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
+import AdminClients from '@/pages/admin/AdminClients';
 import AdminEstates from '@/pages/admin/AdminEstates';
 import AdminRequests from '@/pages/admin/AdminRequests';
 import AdminActiveRequests from '@/pages/admin/AdminActiveRequests';
@@ -60,6 +61,7 @@ const router = createBrowserRouter([
           { path: "/portal/reports/:id", element: <ClientReportDetail /> },
           { path: "/portal/settings", element: <AccountSettings /> },
           { path: "/admin/dashboard", element: <AdminDashboard /> },
+          { path: "/admin/clients", element: <AdminClients /> },
           { path: "/admin/estates", element: <AdminEstates /> },
           { path: "/admin/requests", element: <AdminRequests /> },
           { path: "/admin/active-requests", element: <AdminActiveRequests /> },

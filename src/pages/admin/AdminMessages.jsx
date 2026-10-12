@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getConversations } from "@/lib/conversations";
+import { getConversations, createConversation } from "@/lib/conversations";
 import { getMessages, sendMessage, subscribeToMessages } from "@/lib/messages";
 import { PageHeader, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MessageSquare, Send, Loader2, Paperclip, PlusCircle } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client-react-router";
 
@@ -18,8 +19,21 @@ export default function AdminMessages() {
   const [attachment, setAttachment] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
   const [newConversationTitle, setNewConversationTitle] = useState("");
-  const [newConversationParticipants, setNewConversationParticipants] = useState("");
+  const [selectedParticipants, setSelectedParticipants] = useState([]);
   const scrollRef = useRef(null);
+
+  const { data: clients } = useQuery({
+    queryKey: ["clients"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profiles').select('id, full_name, email').eq('role', 'client').order('full_name');
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const toggleParticipant = (id) => {
+    setSelectedParticipants((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
+  };
 
   const { data: conversations, isLoading: isLoadingConversations } = useQuery({
     queryKey: ["conversations"],
@@ -42,22 +56,21 @@ export default function AdminMessages() {
   });
 
   const { mutate: doCreateConversation, isLoading: isCreatingConversation } = useMutation({
-    mutationFn: ({ title, participantIds }) => supabase.functions.invoke("create-conversation", { body: { title, participantIds } }),
+    mutationFn: ({ title, participantIds }) => createConversation(title, participantIds),
     onSuccess: () => {
       setShowCreate(false);
       setNewConversationTitle("");
-      setNewConversationParticipants("");
+      setSelectedParticipants([]);
       queryClient.invalidateQueries(["conversations"]);
     },
   });
 
   useEffect(() => {
     if (selectedConversation) {
-      const subscription = subscribeToMessages(selectedConversation.id, (newMessage) => {
-        queryClient.setQueryData(["messages", selectedConversation.id], (oldData) => {
-          if (!oldData) return [newMessage];
-          return [...oldData, newMessage];
-        });
+      // Refetch (rather than splice the raw payload in) so the sender's
+      // profile join is populated for the new message too.
+      const subscription = subscribeToMessages(selectedConversation.id, () => {
+        queryClient.invalidateQueries(["messages", selectedConversation.id]);
       });
       return () => subscription.unsubscribe();
     }
@@ -87,8 +100,7 @@ export default function AdminMessages() {
   };
 
   const handleCreateConversation = () => {
-    const participantIds = newConversationParticipants.split(",").map(id => id.trim());
-    doCreateConversation({ title: newConversationTitle, participantIds: [...participantIds, user.id] });
+    doCreateConversation({ title: newConversationTitle, participantIds: [...selectedParticipants, user.id] });
   };
 
   if (isLoadingConversations) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;
@@ -113,10 +125,21 @@ export default function AdminMessages() {
                 <Input id="conv-title" value={newConversationTitle} onChange={(e) => setNewConversationTitle(e.target.value)} />
               </div>
               <div>
-                <Label htmlFor="conv-participants">Participant IDs (comma-separated)</Label>
-                <Input id="conv-participants" value={newConversationParticipants} onChange={(e) => setNewConversationParticipants(e.target.value)} />
+                <Label>Clients</Label>
+                <div className="max-h-40 overflow-y-auto border border-input rounded-md p-2 space-y-1 mt-1">
+                  {!clients || clients.length === 0 ? (
+                    <p className="text-xs text-muted-foreground px-1 py-1">No clients yet.</p>
+                  ) : (
+                    clients.map((c) => (
+                      <label key={c.id} className="flex items-center gap-2 px-1 py-1.5 rounded hover:bg-secondary/50 cursor-pointer text-sm">
+                        <Checkbox checked={selectedParticipants.includes(c.id)} onCheckedChange={() => toggleParticipant(c.id)} />
+                        <span>{c.full_name || c.email || c.id}{c.email ? ` (${c.email})` : ""}</span>
+                      </label>
+                    ))
+                  )}
+                </div>
               </div>
-              <Button onClick={handleCreateConversation} disabled={isCreatingConversation}>
+              <Button onClick={handleCreateConversation} disabled={isCreatingConversation || selectedParticipants.length === 0}>
                 {isCreatingConversation ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
               </Button>
             </div>
@@ -157,11 +180,11 @@ export default function AdminMessages() {
                   return (
                     <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[75%] rounded-lg px-4 py-3 ${mine ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}>
-                        <p className="text-sm font-semibold">{m.sender.full_name}</p>
+                        <p className="text-sm font-semibold">{m.sender?.full_name || "Unknown"}</p>
                         <p className="text-sm whitespace-pre-wrap">{m.body}</p>
                         {m.attachment_path && (
                           <a
-                            href={supabase.storage.from("chat-attachments").getPublicUrl(m.attachment_path).publicURL}
+                            href={supabase.storage.from("chat-attachments").getPublicUrl(m.attachment_path).data.publicUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm underline mt-2 block"
