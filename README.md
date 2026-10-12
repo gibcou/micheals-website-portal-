@@ -1,122 +1,71 @@
-# Prestige Estate Management — Client Portal
+# Micheal's Website Portal
 
-A secure, role-based client portal for **Prestige Estate Management**, built on [Base44](https://base44.com). Estate owners get a private view of everything Prestige manages on their behalf — service requests, weekly reports, invoices, and a direct line to their estate advisor. Administrators get a full back-office dashboard.
+This is a client portal application built with React, Vite, and Supabase. It provides a secure way for clients to communicate with their advisors, manage service requests, and view reports and invoices.
 
-The same codebase powers the web app, the iOS app, and the Android app (both published as native store builds via Base44's mobile app pipeline).
+![Screenshot of the application](https://core-normal.traeapi.us/api/ide/v1/text_to_image?prompt=A%20client%20portal%20dashboard%20with%20a%20clean%20and%20modern%20design.%20The%20dashboard%20shows%20stats%20for%20open%20requests,%20invoices%20due,%20and%20reports%20filed.%20There%20is%20also%20a%20list%20of%20recent%20requests%20and%20latest%20reports.&image_size=landscape_16_9)
 
----
+## Architecture
 
-## Features
+The application is built with a modern JavaScript stack:
 
-### Client Portal
-- **Dashboard** — estate profile (location, type, advisor), live stats (open requests, invoices due, reports filed), recent requests and latest weekly reports.
-- **Service Requests** — submit new requests (with optional photo attachment) and track status from submission to completion.
-- **Weekly Reports** — read every weekly report with summary, actions taken, and photo galleries.
-- **Invoices** — view engagement statements, filter by status, and mark invoices paid.
-- **Messages** — a private, real-time messaging channel with the estate advisor.
-- **Notifications** — in-app notification bell for new messages, request status changes, and overdue invoice reminders.
-
-### Admin Dashboard
-- **Overview** — estate/active request totals, request status distribution (server-side aggregation), recent activity, quick actions.
-- **Needs Attention** — a dedicated queue of active requests sorted by priority.
-- **Estates** — full CRUD for estate records, including advisor assignment, retainer and status (active / onboarding / paused).
-- **Requests** — manage every service request: update status, schedule dates, assign staff, review attached photos.
-- **Weekly Reports** — publish weekly reports (with photos) per estate.
-- **Invoices** — create and manage invoices, plus **bulk-update** tools to move many invoices between statuses at once.
-- **Messages** — reply to any client's conversation from one place.
-- **Portal Preview** — admins can switch to "View Client Portal" to preview exactly what a client sees.
-
-### Automation
-- **Payment reminders** — a scheduled daily workflow finds overdue invoices and emails payment reminders automatically (`base44/workflows/Overdue Invoice Reminders.jsonc`).
-- **Status notifications** — when a request's status changes or a new message arrives, the recipient is notified in-app (and by email templates where configured).
-
-### Mobile & iOS Optimizations
-- **Pull-to-refresh** — touch-based refresh on Requests, Reports, and Invoices; each page runs on React Query and a pull refetches the active queries so lists stay in sync with the server.
-- **Bottom-sheet selects** — on viewports under 768px, the shared Select control renders options in a `vaul` bottom-sheet drawer (native-feel pickers); desktop keeps standard popover dropdowns.
-- **Tab stack memory** — the mobile bottom navigation restores each tab's last visited sub-route (e.g. an invoice detail), and tapping the active tab resets it to its root.
-- **Optimistic UI** — new message bubbles and invoice status changes appear instantly, rolling back automatically if the server call fails.
-- **Native-feel layout** — safe-area insets, sticky bottom navigation, 44px touch targets, and disabled rubber-band scrolling.
-
----
-
-## Security & Access Control
-
-- **Authentication** — the platform's built-in auth (email/password, Google OAuth, OTP verification, password reset).
-- **Row-Level Security (RLS)** on every entity:
-  - Clients can only read/update records tied to their own `client_id` (their estate).
-  - Administrators (`role: "admin"`) have full access.
-  - Notification records are scoped to the recipient.
-- **Route guards** — `/admin/*` routes redirect non-admin users to the client portal.
-- **Private file storage** — client photo attachments are stored privately (signed URLs are generated on demand for viewing).
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 18 + Vite, Tailwind CSS, shadcn/ui, lucide-react, Recharts |
-| Backend | Base44 (auth, database with RLS, storage, workflows, functions) |
-| Realtime | Base44 entity subscriptions (live messaging) |
-| Email | Base44 email templates (MJML) + scheduled workflows |
-| Mobile | Base44 native wrapper (iOS / Android store builds) |
-
-### Project Structure
-```
-index.html                  # entry point (mobile web-app meta, manifest)
-public/                     # favicon, web manifest
-src/
-  App.jsx                   # router (client + admin routes, auth guards)
-  components/
-    portal/                 # shared client-portal layout, forms, shared UI
-    admin/                  # admin-only widgets (bulk invoice update, charts)
-    AuthLayout.jsx, ProtectedRoute.jsx, ...
-  pages/
-    portal/                 # ClientDashboard, ClientRequests, ClientReports, ClientInvoices, ClientMessages
-    admin/                  # AdminDashboard, AdminEstates, AdminRequests, AdminActiveRequests, AdminReports, AdminInvoices, AdminMessages
-    Login/Register/ForgotPassword/ResetPassword
-base44/
-  entities/                 # data schemas + RLS rules (Estate, ServiceRequest, WeeklyReport, Invoice, Message, Notification)
-  functions/                # backend functions (notifications, overdue-invoice reminders)
-  workflows/                # scheduled automations
-  emails/                   # MJML email templates
-```
-
-### Data Entities
-- **Estate** — property profile, client link, advisor, monthly retainer, status.
-- **ServiceRequest** — title, description, category, priority, status, scheduled/completed dates, photo.
-- **WeeklyReport** — title, week of, summary, actions taken, photos.
-- **Invoice** — invoice number, amount, status (draft / sent / paid / overdue), issue/due/paid dates, reminder date.
-- **Message** — per-estate conversation thread, sender role, read state.
-- **Notification** — per-user in-app notifications.
-
----
+*   **Frontend**: A single-page application built with **React** and **Vite**. It uses **Tailwind CSS** for styling and **shadcn/ui** for UI components.
+*   **Backend**: The backend is powered by **Supabase**. We use Supabase for:
+    *   **Authentication**: Secure user authentication with email and password.
+    *   **Database**: A PostgreSQL database to store all application data.
+    *   **Storage**: Secure file storage for message attachments.
+    *   **Edge Functions**: Serverless functions for secure, server-side logic.
+*   **Security**: The application uses Supabase's Row Level Security (RLS) to ensure that users can only access their own data. All sensitive operations are handled by secure Supabase Edge Functions.
 
 ## Getting Started
 
-This project runs inside Base44 (the platform hosts the app, database, auth and backend). To run/deploy outside of Base44 (e.g. on Vercel), copy the environment template and configure the Base44 app credentials:
+### Prerequisites
+
+*   Node.js (v18 or higher)
+*   npm
+*   A Supabase account
+
+### 1. Clone the repository
 
 ```bash
-cp .env.example .env   # fill in your Base44 app id / URLs
-npm install
-npm run dev            # local dev
-npm run build          # production build -> dist/
+git clone https://github.com/gibcou/micheals-website-portal-.git
+cd micheals-website-portal-
 ```
 
-A `vercel.json` is included for Vercel deployment (SPA rewrites + Base44 API proxying).
+### 2. Install dependencies
 
----
+```bash
+npm install
+```
 
-## Publishing to the App Stores
+### 3. Set up Supabase
 
-1. In Base44, open **Publish → Mobile app → Check Your App** and run the App Store and Google Play scans (fix any findings with AI).
-2. On a Builder plan or higher, go to **Publish → Mobile app → Build Store Files** to generate the Apple **IPA** and Google Play **AAB** (push-notification credentials can be added here too).
-3. Submit the files through your own **App Store Connect** and **Google Play Console** accounts. Base44 prepares the files; store submission and review are handled by you.
+1.  Create a new project on [Supabase](https://app.supabase.io).
+2.  Go to the **SQL Editor** in your Supabase project.
+3.  Copy the entire content of `supabase/migrations/20261012_initial_schema.sql` and run it in the SQL editor. This will create the necessary tables and policies.
+4.  Go to **Project Settings** > **API** and find your **Project URL** and **Public (anon) key**.
+5.  Create a new file named `.env.local` in the root of the project and add the following, replacing the values with your own:
 
-The mobile app is a lightweight native wrapper around the published web app, so every update to this codebase flows straight to the store apps.
+    ```
+    VITE_SUPABASE_URL="your-supabase-url"
+    VITE_SUPABASE_PUBLISHABLE_KEY="your-supabase-anon-key"
+    ```
 
----
+### 4. Run the application
 
-## Design
+```bash
+npm run dev
+```
 
-Luxury aesthetic: dark charcoal base (`#121212`), muted gold accents (`#C5A071`), Cormorant Garamond display headings, Inter body text.
+The application will be available at `http://localhost:5173`.
+
+## Backend
+
+The backend logic is handled by Supabase Edge Functions, located in the `supabase/functions` directory. These functions are written in TypeScript and are deployed to Supabase.
+
+*   `create-conversation`: A secure endpoint for creating new conversations. It can only be called by authenticated admin users.
+
+To deploy new or updated edge functions, use the Supabase CLI:
+
+```bash
+supabase functions deploy --project-ref <your-project-ref>
+```
