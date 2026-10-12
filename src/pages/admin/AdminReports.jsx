@@ -34,7 +34,8 @@ export default function AdminReports() {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    const { data, error } = await supabase.from('weekly_reports').insert([form]);
+    const est = estates.find((x) => x.id === form.estate_id);
+    const { data, error } = await supabase.from('weekly_reports').insert([{ ...form, estate_name: est?.name || "" }]);
     if (error) console.error("Error saving report", error);
     setSaving(false);
     setOpen(false);

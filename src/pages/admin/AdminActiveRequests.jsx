@@ -56,7 +56,7 @@ export default function AdminActiveRequests() {
                   <div className="min-w-0">
                     <h3 className="text-foreground font-medium">{r.title}</h3>
                     {r.description && <p className="text-sm text-muted-foreground mt-1">{r.description}</p>}
-                    {r.photo && <RequestPhoto fileUri={r.photo} className="mt-3 h-40 w-56 rounded-md border border-border" />}
+                    {r.photo_url && <RequestPhoto fileUri={r.photo_url} className="mt-3 h-40 w-56 rounded-md border border-border" />}
                     <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
                       <span className="text-primary">{r.estate_name || "—"}</span>
                       <span>·</span><span>{r.category}</span>
