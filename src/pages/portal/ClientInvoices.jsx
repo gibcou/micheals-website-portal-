@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import PullToRefresh from "@/components/portal/PullToRefresh";
 
 export default function ClientInvoices() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: invoices = [], isLoading: loading } = useQuery({
     queryKey: ["portal", "invoices"],
     queryFn: async () => {
@@ -18,6 +19,12 @@ export default function ClientInvoices() {
       return invs.items || [];
     },
   });
+
+  const handlePay = async (inv) => {
+    const paidDate = new Date().toISOString().split("T")[0];
+    await base44.entities.Invoice.update(inv.id, { status: "paid", paid_date: paidDate });
+    queryClient.invalidateQueries({ queryKey: ["portal", "invoices"] });
+  };
 
   if (loading) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;
 
@@ -48,6 +55,15 @@ export default function ClientInvoices() {
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                   <span className="font-display text-xl text-foreground">${inv.amount.toLocaleString()}</span>
+                  {inv.status !== "paid" && (
+                    <Button
+                      size="sm"
+                      onClick={(e) => { e.stopPropagation(); handlePay(inv); }}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <CreditCard className="h-3.5 w-3.5 mr-1" />Pay
+                    </Button>
+                  )}
                   <StatusBadge status={inv.status} />
                 </div>
               </div>
