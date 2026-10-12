@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RequestPhoto from "@/components/portal/RequestPhoto";
@@ -13,17 +13,29 @@ export default function AdminRequests() {
   const [filter, setFilter] = useState("all");
 
   const load = async () => {
-    const query = filter === "all" ? {} : { status: filter };
-    const { items } = await base44.entities.ServiceRequest.filter(query, { sort: "-created_date", limit: 100 });
-    setRequests(items || []);
+    setLoading(true);
+    let query = supabase.from('service_requests').select('*').order('created_at', { ascending: false }).limit(100);
+
+    if (filter !== 'all') {
+      query = query.eq('status', filter);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error loading service requests', error);
+    } else {
+      setRequests(data || []);
+    }
     setLoading(false);
   };
 
   useEffect(() => { load(); }, [filter]);
 
   const updateStatus = async (id, status) => {
-    setRequests((prev) => prev.map((r) => r.id === id ? { ...r, status } : r));
-    await base44.functions.invoke("notifyRequestStatus", { request_id: id, status });
+    setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+    await supabase.from('service_requests').update({ status }).eq('id', id);
+    await supabase.functions.invoke("notifyRequestStatus", { body: { request_id: id, status } });
     load();
   };
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { FileText, Calendar } from "lucide-react";
 import PullToRefresh from "@/components/portal/PullToRefresh";
@@ -11,10 +11,13 @@ export default function ClientReports() {
   const { data: reports = [], isLoading: loading } = useQuery({
     queryKey: ["portal", "reports"],
     queryFn: async () => {
-      const { items } = await base44.entities.Estate.filter({}, { sort: "-created_date", limit: 1 });
-      if (!items[0]) return [];
-      const reps = await base44.entities.WeeklyReport.filter({ estate_id: items[0].id }, { sort: "-week_of", limit: 50 });
-      return reps.items || [];
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: estate, error: estateError } = await supabase.from('estates').select('id').eq('client_id', user.id).single();
+      if (estateError) console.error("Error fetching estate", estateError);
+      if (!estate) return [];
+      const { data: reps, error: repsError } = await supabase.from('weekly_reports').select('*').eq('estate_id', estate.id).order('week_of', { ascending: false }).limit(50);
+      if (repsError) console.error("Error fetching reports", repsError);
+      return reps || [];
     },
   });
 

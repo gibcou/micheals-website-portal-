@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -18,12 +18,14 @@ export default function AdminReports() {
   const [form, setForm] = useState({ title: "", week_of: "", estate_id: "", summary: "", actions_taken: "" });
 
   const load = async () => {
-    const [reps, ests] = await Promise.all([
-      base44.entities.WeeklyReport.filter({}, { sort: "-week_of", limit: 100 }),
-      base44.entities.Estate.filter({}, { sort: "-created_date", limit: 100 }),
-    ]);
-    setReports(reps.items || []);
-    setEstates(ests.items || []);
+    const { data: reps, error: repsError } = await supabase.from('weekly_reports').select('*').order('week_of', { ascending: false }).limit(100);
+    const { data: ests, error: estsError } = await supabase.from('estates').select('*').order('created_at', { ascending: false }).limit(100);
+
+    if (repsError) console.error("Error loading reports", repsError);
+    if (estsError) console.error("Error loading estates", estsError);
+
+    setReports(reps || []);
+    setEstates(ests || []);
     setLoading(false);
   };
 
@@ -32,12 +34,8 @@ export default function AdminReports() {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    const est = estates.find((x) => x.id === form.estate_id);
-    await base44.entities.WeeklyReport.create({
-      ...form,
-      estate_name: est?.name || "",
-      client_id: est?.client_id || "",
-    });
+    const { data, error } = await supabase.from('weekly_reports').insert([form]);
+    if (error) console.error("Error saving report", error);
     setSaving(false);
     setOpen(false);
     setForm({ title: "", week_of: "", estate_id: "", summary: "", actions_taken: "" });

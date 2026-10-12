@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import RequestFormDialog from "@/components/portal/RequestFormDialog";
@@ -16,12 +16,35 @@ export default function ClientRequests() {
   const { data, isLoading: loading } = useQuery({
     queryKey: ["portal", "requests"],
     queryFn: async () => {
-      const { items } = await base44.entities.Estate.filter({}, { sort: "-created_date", limit: 1 });
-      const est = items[0];
-      const reqs = est
-        ? await base44.entities.ServiceRequest.filter({ estate_id: est.id }, { sort: "-created_date", limit: 50 })
-        : { items: [] };
-      return { estate: est, requests: reqs.items || [] };
+      const { data: est, error: estateError } = await supabase
+        .from('estates')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (estateError) {
+        console.error("Error fetching estate", estateError);
+        return { estate: null, requests: [] };
+      }
+      
+      if (!est) {
+        return { estate: null, requests: [] };
+      }
+
+      const { data: reqs, error: reqsError } = await supabase
+        .from('service_requests')
+        .select('*')
+        .eq('estate_id', est.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (reqsError) {
+        console.error("Error fetching service requests", reqsError);
+        return { estate: est, requests: [] };
+      }
+      
+      return { estate: est, requests: reqs || [] };
     },
   });
   const estate = data?.estate;

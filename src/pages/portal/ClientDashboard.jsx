@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatCard, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import RequestFormDialog from "@/components/portal/RequestFormDialog";
@@ -16,21 +16,38 @@ export default function ClientDashboard() {
 
   const load = async () => {
     try {
-      const { items } = await base44.entities.Estate.filter({}, { sort: "-created_date", limit: 1 });
-      const est = items[0];
+      const { data: est, error: estateError } = await supabase
+        .from('estates')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (estateError) console.error("Error fetching estate", estateError);
+
       setEstate(est);
+
       if (est) {
-        const [reqs, openCount, invoices, reportCount, reports] = await Promise.all([
-          base44.entities.ServiceRequest.filter({ estate_id: est.id, status: { $in: ["open", "in_progress", "scheduled"] } }, { sort: "-created_date", limit: 5 }),
-          base44.entities.ServiceRequest.count({ estate_id: est.id, status: { $in: ["open", "in_progress", "scheduled"] } }),
-          base44.entities.Invoice.count({ estate_id: est.id, status: { $in: ["sent", "overdue"] } }),
-          base44.entities.WeeklyReport.count({ estate_id: est.id }),
-          base44.entities.WeeklyReport.filter({ estate_id: est.id }, { sort: "-week_of", limit: 3 }),
+        const [
+          reqsRes,
+          openCountRes,
+          invoicesRes,
+          reportCountRes,
+          reportsRes,
+        ] = await Promise.all([
+          supabase.from('service_requests').select('*').eq('estate_id', est.id).in('status', ["open", "in_progress", "scheduled"]).order('created_at', { ascending: false }).limit(5),
+          supabase.from('service_requests').select('*', { count: 'exact', head: true }).eq('estate_id', est.id).in('status', ["open", "in_progress", "scheduled"]),
+          supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('estate_id', est.id).in('status', ["sent", "overdue"]),
+          supabase.from('weekly_reports').select('*', { count: 'exact', head: true }).eq('estate_id', est.id),
+          supabase.from('weekly_reports').select('*').eq('estate_id', est.id).order('week_of', { ascending: false }).limit(3),
         ]);
-        setRecentRequests(reqs.items || []);
-        setStats({ openRequests: openCount, unpaidInvoices: invoices, reports: reportCount });
-        setRecentReports(reports.items || []);
+
+        setRecentRequests(reqsRes.data || []);
+        setStats({ openRequests: openCountRes.count, unpaidInvoices: invoicesRes.count, reports: reportCountRes.count });
+        setRecentReports(reportsRes.data || []);
       }
+    } catch (error) {
+        console.error("Error in load function:", error);
     } finally {
       setLoading(false);
     }

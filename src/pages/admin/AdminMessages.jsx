@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
 import { getConversations } from "@/lib/conversations";
 import { getMessages, sendMessage, subscribeToMessages } from "@/lib/messages";
 import { PageHeader, SectionCard, EmptyState } from "@/components/portal/Shared";
@@ -43,7 +42,7 @@ export default function AdminMessages() {
   });
 
   const { mutate: doCreateConversation, isLoading: isCreatingConversation } = useMutation({
-    mutationFn: ({ title, participantIds }) => base44.functions.invoke("create-conversation", { body: { title, participantIds } }),
+    mutationFn: ({ title, participantIds }) => supabase.functions.invoke("create-conversation", { body: { title, participantIds } }),
     onSuccess: () => {
       setShowCreate(false);
       setNewConversationTitle("");

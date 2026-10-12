@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -22,8 +22,9 @@ export default function AdminEstates() {
   const [deleting, setDeleting] = useState(null);
 
   const load = async () => {
-    const { items } = await base44.entities.Estate.filter({}, { sort: "-created_date", limit: 50 });
-    setEstates(items || []);
+    const { data, error } = await supabase.from('estates').select('*').order('created_at', { ascending: false }).limit(50);
+    if (error) console.error("Error loading estates", error);
+    setEstates(data || []);
     setLoading(false);
   };
 
@@ -36,15 +37,21 @@ export default function AdminEstates() {
     e.preventDefault();
     setSaving(true);
     const payload = { ...form, monthly_retainer: form.monthly_retainer ? Number(form.monthly_retainer) : null };
-    if (editing) await base44.entities.Estate.update(editing.id, payload);
-    else await base44.entities.Estate.create(payload);
+    if (editing) {
+      const { error } = await supabase.from('estates').update(payload).eq('id', editing.id);
+      if (error) console.error("Error updating estate", error);
+    } else {
+      const { error } = await supabase.from('estates').insert([payload]);
+      if (error) console.error("Error creating estate", error);
+    }
     setSaving(false);
     setOpen(false);
     load();
   };
 
   const confirmDelete = async () => {
-    await base44.entities.Estate.delete(deleting.id);
+    const { error } = await supabase.from('estates').delete().eq('id', deleting.id);
+    if (error) console.error("Error deleting estate", error);
     setDeleting(null);
     load();
   };

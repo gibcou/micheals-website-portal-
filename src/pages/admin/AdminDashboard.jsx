@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatCard, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import RequestStatusChart from "@/components/admin/RequestStatusChart";
 import BulkInvoiceUpdate from "@/components/admin/BulkInvoiceUpdate";
@@ -16,19 +16,51 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const [estates, openReqs, unpaid, reports, reqs, invAgg, reqAgg] = await Promise.all([
-          base44.entities.Estate.count({}),
-          base44.entities.ServiceRequest.count({ status: { $in: ["open", "in_progress"] } }),
-          base44.entities.Invoice.count({ status: { $in: ["sent", "overdue"] } }),
-          base44.entities.WeeklyReport.count({}),
-          base44.entities.ServiceRequest.filter({}, { sort: "-created_date", limit: 5 }),
-          base44.entities.Invoice.aggregate({ groupBy: "status", sum: "amount" }),
-          base44.entities.ServiceRequest.aggregate({ groupBy: "status" }),
-        ]);
-        setStats({ estates, openRequests: openReqs, unpaidInvoices: unpaid, reports });
-        setRecentRequests(reqs.items || []);
-        setInvoiceStatuses(invAgg.rows || []);
-        setRequestStatuses(reqAgg.rows || []);
+        const { data: estates, error: estatesError } = await supabase.from('estates').select('*', { count: 'exact' });
+        const { data: openReqs, error: openReqsError } = await supabase.from('service_requests').select('*', { count: 'exact' }).in('status', ['open', 'in_progress']);
+        const { data: unpaid, error: unpaidError } = await supabase.from('invoices').select('*', { count: 'exact' }).in('status', ['sent', 'overdue']);
+        const { data: reports, error: reportsError } = await supabase.from('weekly_reports').select('*', { count: 'exact' });
+        const { data: reqs, error: reqsError } = await supabase.from('service_requests').select('*').order('created_at', { ascending: false }).limit(5);
+
+        if (estatesError) console.error("Error loading estates", estatesError);
+        if (openReqsError) console.error("Error loading open requests", openReqsError);
+        if (unpaidError) console.error("Error loading unpaid invoices", unpaidError);
+        if (reportsError) console.error("Error loading reports", reportsError);
+        if (reqsError) console.error("Error loading recent requests", reqsError);
+
+        setStats({ estates: estates?.length || 0, openRequests: openReqs?.length || 0, unpaidInvoices: unpaid?.length || 0, reports: reports?.length || 0 });
+        setRecentRequests(reqs || []);
+
+        const { data: invAgg, error: invAggError } = await supabase.from('invoices').select('status, amount');
+        if (invAggError) console.error("Error aggregating invoices", invAggError);
+        else {
+          const invAggData = invAgg.reduce((acc, curr) => {
+            const existing = acc.find(item => item.status === curr.status);
+            if (existing) {
+              existing.sum_amount += curr.amount;
+              existing.count += 1;
+            } else {
+              acc.push({ status: curr.status, sum_amount: curr.amount, count: 1 });
+            }
+            return acc;
+          }, []);
+          setInvoiceStatuses(invAggData);
+        }
+
+        const { data: reqAgg, error: reqAggError } = await supabase.from('service_requests').select('status');
+        if (reqAggError) console.error("Error aggregating requests", reqAggError);
+        else {
+          const reqAggData = reqAgg.reduce((acc, curr) => {
+            const existing = acc.find(item => item.status === curr.status);
+            if (existing) {
+              existing.count += 1;
+            } else {
+              acc.push({ status: curr.status, count: 1 });
+            }
+            return acc;
+          }, []);
+          setRequestStatuses(reqAggData);
+        }
       } finally {
         setLoading(false);
       }

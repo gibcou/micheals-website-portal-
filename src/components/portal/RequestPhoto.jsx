@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { Image } from "@/components/ui/image";
 
 // Renders a privately stored request photo by signing its file URI on the fly.
@@ -8,9 +8,15 @@ export default function RequestPhoto({ fileUri, className }) {
 
   useEffect(() => {
     let active = true;
-    base44.integrations.Core.CreateFileSignedUrl({ file_uri: fileUri })
-      .then((res) => { if (active) setUrl(res.signed_url); })
-      .catch(() => {});
+    const getSignedUrl = async () => {
+      const { data, error } = await supabase.storage.from('request-photos').createSignedUrl(fileUri, 60);
+      if (error) {
+        console.error("Error creating signed URL", error);
+      } else {
+        if (active) setUrl(data.signedUrl);
+      }
+    };
+    getSignedUrl();
     return () => { active = false; };
   }, [fileUri]);
 

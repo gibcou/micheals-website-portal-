@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -23,12 +23,15 @@ export default function AdminInvoices() {
   const [form, setForm] = useState(emptyForm);
 
   const load = async () => {
-    const [invs, ests] = await Promise.all([
-      base44.entities.Invoice.filter({}, { sort: "-issue_date", limit: 100 }),
-      base44.entities.Estate.filter({}, { sort: "-created_date", limit: 100 }),
-    ]);
-    setInvoices(invs.items || []);
-    setEstates(ests.items || []);
+    setLoading(true);
+    const { data: invoicesData, error: invoicesError } = await supabase.from('invoices').select('*').order('issue_date', { ascending: false }).limit(100);
+    const { data: estatesData, error: estatesError } = await supabase.from('estates').select('*').order('created_at', { ascending: false }).limit(100);
+
+    if (invoicesError) console.error('Error loading invoices', invoicesError);
+    if (estatesError) console.error('Error loading estates', estatesError);
+
+    setInvoices(invoicesData || []);
+    setEstates(estatesData || []);
     setLoading(false);
   };
 
@@ -65,8 +68,16 @@ export default function AdminInvoices() {
       status: form.status,
       ...(form.status === "paid" && !editing?.paid_date ? { paid_date: new Date().toISOString().split("T")[0] } : {}),
     };
-    if (editing) await base44.entities.Invoice.update(editing.id, payload);
-    else await base44.entities.Invoice.create(payload);
+
+    let error;
+    if (editing) {
+      ({ error } = await supabase.from('invoices').update(payload).eq('id', editing.id));
+    } else {
+      ({ error } = await supabase.from('invoices').insert([payload]));
+    }
+    
+    if (error) console.error('Error saving invoice', error);
+
     setSaving(false);
     setOpen(false);
     setEditing(null);
@@ -75,7 +86,8 @@ export default function AdminInvoices() {
   };
 
   const confirmDelete = async () => {
-    await base44.entities.Invoice.delete(deleting.id);
+    const { error } = await supabase.from('invoices').delete().eq('id', deleting.id);
+    if (error) console.error('Error deleting invoice', error);
     setDeleting(null);
     load();
   };

@@ -1,19 +1,45 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 
 export default function Home() {
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    base44.auth.me()
-      .then((user) => {
-        if (user?.role === "admin") navigate("/admin/dashboard", { replace: true });
-        else navigate("/portal/dashboard", { replace: true });
-      })
-      .catch(() => navigate("/login", { replace: true }))
-      .finally(() => setChecking(false));
+    const checkUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile, error } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+          if (error) {
+              console.error("Error fetching profile", error);
+              navigate("/login", { replace: true });
+              return;
+          }
+          
+          if (profile?.role === "admin") {
+            navigate("/admin/dashboard", { replace: true });
+          } else {
+            navigate("/portal/dashboard", { replace: true });
+          }
+        } else {
+          navigate("/login", { replace: true });
+        }
+      } catch (e) {
+        console.error("Error checking user session:", e);
+        navigate("/login", { replace: true });
+      } finally {
+        setChecking(false);
+      }
+    };
+
+    checkUser();
   }, [navigate]);
 
   return (

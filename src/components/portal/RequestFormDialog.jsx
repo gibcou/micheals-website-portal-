@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -18,13 +18,15 @@ export default function RequestFormDialog({ estate, open, onOpenChange, onCreate
     e.preventDefault();
     setSubmitting(true);
     const form = new FormData(e.target);
-    let photo_uri;
+    let photo_url;
     const fileInput = e.target.elements.photo;
     if (fileInput.files && fileInput.files[0]) {
-      const uploaded = await base44.integrations.Core.UploadPrivateFile({ file: fileInput.files[0] });
-      photo_uri = uploaded.file_uri;
+      const file = fileInput.files[0];
+      const { data, error } = await supabase.storage.from('request-photos').upload(`${estate.id}/${file.name}`, file);
+      if (error) console.error("Error uploading photo", error);
+      else photo_url = data.path;
     }
-    await base44.entities.ServiceRequest.create({
+    const { error } = await supabase.from('service_requests').insert([{
       title: form.get("title"),
       description: form.get("description"),
       category,
@@ -33,8 +35,9 @@ export default function RequestFormDialog({ estate, open, onOpenChange, onCreate
       estate_name: estate.name,
       client_id: estate.client_id,
       status: "open",
-      photo: photo_uri,
-    });
+      photo_url: photo_url,
+    }]);
+    if (error) console.error("Error creating service request", error);
     setSubmitting(false);
     setCategory("Maintenance");
     setPriority("medium");

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { StatusBadge } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,8 +13,16 @@ export default function BulkInvoiceUpdate() {
   const [applying, setApplying] = useState(false);
 
   const load = async () => {
-    const { items } = await base44.entities.Invoice.filter({}, { sort: "-issue_date", limit: 100 });
-    setInvoices(items || []);
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('invoices')
+      .select('*')
+      .order('issue_date', { ascending: false })
+      .limit(100);
+
+    if (error) console.error("Error loading invoices:", error);
+    
+    setInvoices(data || []);
     setSelected(new Set());
     setLoading(false);
   };
@@ -39,7 +47,13 @@ export default function BulkInvoiceUpdate() {
       status,
       ...(status === "paid" ? { paid_date: new Date().toISOString().split("T")[0] } : {}),
     }));
-    await base44.entities.Invoice.bulkUpdate(updates);
+    
+    const { error } = await supabase.from('invoices').upsert(updates);
+
+    if (error) {
+      console.error("Error bulk updating invoices:", error);
+    }
+
     setApplying(false);
     load();
   };

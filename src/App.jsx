@@ -1,6 +1,4 @@
 import { Toaster } from "@/components/ui/toaster"
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClientInstance } from '@/lib/query-client'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import Home from './pages/Home';
@@ -25,7 +23,6 @@ import AdminActiveRequests from '@/pages/admin/AdminActiveRequests';
 import AdminReports from '@/pages/admin/AdminReports';
 import AdminInvoices from '@/pages/admin/AdminInvoices';
 import AdminMessages from '@/pages/admin/AdminMessages';
-import { SupabaseProvider } from "@/lib/supabase/client-react-router";
 
 const router = createBrowserRouter([
   {
@@ -83,14 +80,10 @@ import { AuthProvider } from "@/lib/AuthContext";
 
 function App() {
   return (
-    <QueryClientProvider client={queryClientInstance}>
-      <SupabaseProvider>
-        <AuthProvider>
-          <RouterProvider router={router} />
-        </AuthProvider>
-      </SupabaseProvider>
+    <>
+      <RouterProvider router={router} />
       <Toaster />
-    </QueryClientProvider>
+    </>
   );
 }
 

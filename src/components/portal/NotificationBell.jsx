@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Bell, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,18 +13,21 @@ export default function NotificationBell() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    base44.auth.me().then((u) => setUserId(u.id)).catch(() => {});
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user.id);
+    }
+    getUser();
   }, []);
 
   const load = async () => {
     if (!userId) return;
-    const page = await base44.entities.Notification.filter(
-      { recipient_id: userId },
-      { sort: "-created_date", limit: 10 }
-    );
-    setNotifications(page.items || []);
-    const count = await base44.entities.Notification.count({ recipient_id: userId, read: false });
-    setUnreadCount(count);
+    const { data: notifs, error } = await supabase.from('notifications').select('*').eq('recipient_id', userId).order('created_at', { ascending: false }).limit(10);
+    if (error) console.error("Error loading notifications", error);
+    setNotifications(notifs || []);
+    const { count, error: countError } = await supabase.from('notifications').select('*', { count: 'exact' }).eq('recipient_id', userId).eq('read', false);
+    if (countError) console.error("Error counting unread notifications", countError);
+    setUnreadCount(count || 0);
   };
 
   useEffect(() => { load(); }, [userId]);
@@ -32,14 +35,22 @@ export default function NotificationBell() {
   // Live updates: new notifications appear instantly
   useEffect(() => {
     if (!userId) return;
-    const unsubscribe = base44.entities.Notification.subscribe(() => { load(); });
-    return unsubscribe;
+    const channel = supabase.channel('notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${userId}` }, payload => {
+        load();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   const handleClick = async (n) => {
     setOpen(false);
     if (!n.read) {
-      await base44.entities.Notification.update(n.id, { read: true });
+      const { error } = await supabase.from('notifications').update({ read: true }).eq('id', n.id);
+      if (error) console.error("Error marking notification as read", error);
       load();
     }
     if (n.link) navigate(n.link);

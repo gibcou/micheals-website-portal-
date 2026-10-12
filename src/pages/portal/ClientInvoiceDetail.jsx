@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CreditCard, Loader2, FileText, Calendar } from "lucide-react";
@@ -16,7 +16,8 @@ export default function ClientInvoiceDetail() {
   useEffect(() => {
     (async () => {
       try {
-        const inv = await base44.entities.Invoice.get(id);
+        const { data: inv, error } = await supabase.from('invoices').select('*').eq('id', id).single();
+        if (error) throw error;
         if (!inv) setNotFound(true);
         else setInvoice(inv);
       } catch {
@@ -33,7 +34,8 @@ export default function ClientInvoiceDetail() {
     const prev = invoice;
     setInvoice({ ...invoice, status: "paid", paid_date: paidDate });
     try {
-      await base44.entities.Invoice.update(invoice.id, { status: "paid", paid_date: paidDate });
+      const { error } = await supabase.from('invoices').update({ status: "paid", paid_date: paidDate }).eq('id', invoice.id);
+      if (error) throw error;
     } catch (e) {
       setInvoice(prev);
       console.error(e);

@@ -1,9 +1,7 @@
 /// <reference types="vite/types/importMeta.d.ts" />
 import { createBrowserClient } from '@supabase/ssr'
 
-export function createClient() {
-  return createBrowserClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
-  );
-}
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);

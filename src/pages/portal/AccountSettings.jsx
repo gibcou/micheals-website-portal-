@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, SectionCard } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -17,7 +17,20 @@ export default function AccountSettings() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error) {
+        console.error("Error fetching user", error);
+      } else {
+        const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+        if (profileError) {
+          console.error("Error fetching profile", profileError);
+        } else {
+          setUser({ ...data.user, ...profile });
+        }
+      }
+    };
+    fetchUser();
   }, []);
 
   const handleDelete = async () => {
@@ -25,11 +38,11 @@ export default function AccountSettings() {
     setDeleting(true);
     setError("");
     try {
-      await base44.functions.invoke("deleteMyAccount", { confirm: "DELETE" });
-      await base44.auth.logout();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       window.location.href = "/login";
     } catch (e) {
-      setError("We couldn't complete the deletion. Please try again.");
+      setError("We couldn't complete the sign out. Please try again.");
       setDeleting(false);
     }
   };

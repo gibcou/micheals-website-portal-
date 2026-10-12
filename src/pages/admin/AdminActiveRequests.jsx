@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import RequestPhoto from "@/components/portal/RequestPhoto";
 import { Flame } from "lucide-react";
@@ -14,13 +14,21 @@ export default function AdminActiveRequests() {
   useEffect(() => {
     (async () => {
       try {
-        const { items } = await base44.entities.ServiceRequest.filter(
-          { status: { $in: ACTIVE_STATUSES } },
-          { sort: "-created_date", limit: 200 }
-        );
-        setRequests((items || []).sort(
-          (a, b) => PRIORITY_ORDER.indexOf(a.priority) - PRIORITY_ORDER.indexOf(b.priority)
-        ));
+        const { data: items, error } = await supabase
+          .from('service_requests')
+          .select('*')
+          .in('status', ACTIVE_STATUSES)
+          .order('created_at', { ascending: false })
+          .limit(200);
+
+        if (error) {
+          console.error('Error fetching active requests:', error);
+          // Optionally, you could set an error state here and display it in the UI
+        } else {
+          setRequests((items || []).sort(
+            (a, b) => PRIORITY_ORDER.indexOf(a.priority) - PRIORITY_ORDER.indexOf(b.priority)
+          ));
+        }
       } finally {
         setLoading(false);
       }

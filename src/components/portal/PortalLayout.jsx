@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, useLocation, Navigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import NotificationBell from "@/components/portal/NotificationBell";
 import BottomNav from "@/components/portal/BottomNav";
 import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, X, Eye, ShieldCheck, Flame, Settings } from "lucide-react";
@@ -33,7 +33,24 @@ export default function PortalLayout() {
   const location = useLocation();
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => navigate("/login"));
+    const fetchUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          setUser({ ...user, ...profile });
+        } else {
+          navigate("/login");
+        }
+      } catch {
+        navigate("/login");
+      }
+    };
+    fetchUser();
   }, [navigate]);
 
   const isAdmin = user?.role === "admin";
@@ -46,8 +63,8 @@ export default function PortalLayout() {
   }
 
   const handleLogout = async () => {
-    await base44.auth.logout();
-    window.location.href = "/login";
+    await supabase.auth.signOut();
+    navigate("/login");
   };
 
   return (

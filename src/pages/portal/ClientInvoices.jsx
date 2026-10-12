@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { CreditCard, Calendar } from "lucide-react";
@@ -13,16 +13,20 @@ export default function ClientInvoices() {
   const { data: invoices = [], isLoading: loading } = useQuery({
     queryKey: ["portal", "invoices"],
     queryFn: async () => {
-      const { items } = await base44.entities.Estate.filter({}, { sort: "-created_date", limit: 1 });
-      if (!items[0]) return [];
-      const invs = await base44.entities.Invoice.filter({ estate_id: items[0].id }, { sort: "-issue_date", limit: 50 });
-      return invs.items || [];
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: estate, error: estateError } = await supabase.from('estates').select('id').eq('client_id', user.id).single();
+      if (estateError) console.error("Error fetching estate", estateError);
+      if (!estate) return [];
+      const { data: invs, error: invsError } = await supabase.from('invoices').select('*').eq('estate_id', estate.id).order('issue_date', { ascending: false }).limit(50);
+      if (invsError) console.error("Error fetching invoices", invsError);
+      return invs || [];
     },
   });
 
   const handlePay = async (inv) => {
     const paidDate = new Date().toISOString().split("T")[0];
-    await base44.entities.Invoice.update(inv.id, { status: "paid", paid_date: paidDate });
+    const { error } = await supabase.from('invoices').update({ status: "paid", paid_date: paidDate }).eq('id', inv.id);
+    if (error) console.error("Error paying invoice", error);
     queryClient.invalidateQueries({ queryKey: ["portal", "invoices"] });
   };
 

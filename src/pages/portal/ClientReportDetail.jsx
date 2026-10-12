@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
+import { supabase } from "@/lib/supabase/client";
 import { PageHeader, SectionCard } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
@@ -16,7 +16,8 @@ export default function ClientReportDetail() {
   useEffect(() => {
     (async () => {
       try {
-        const rep = await base44.entities.WeeklyReport.get(id);
+        const { data: rep, error } = await supabase.from('weekly_reports').select('*').eq('id', id).single();
+        if (error) throw error;
         if (!rep) setNotFound(true);
         else setReport(rep);
       } catch {
