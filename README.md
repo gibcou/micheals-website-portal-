@@ -41,7 +41,7 @@ npm install
 
 1.  Create a new project on [Supabase](https://app.supabase.io).
 2.  Go to the **SQL Editor** in your Supabase project.
-3.  Copy the entire content of `supabase/migrations/20261012_initial_schema.sql` and run it in the SQL editor. This will create the necessary tables and policies.
+3.  Copy the entire content of `supabase/migrations/20261012_initial_schema.sql` and run it in the SQL editor. This script is idempotent, meaning you can run it multiple times without causing errors. It will only create the tables and objects that don't already exist.
 4.  Go to **Project Settings** > **API** and find your **Project URL** and **Public (anon) key**.
 5.  Create a new file named `.env.local` in the root of the project and add the following, replacing the values with your own:
 
