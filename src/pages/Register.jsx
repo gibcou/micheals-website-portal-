@@ -26,14 +26,12 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const { data: { user }, error: signUpError } = await supabase.auth.signUp({ email, password });
+      const { error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: fullName } },
+      });
       if (signUpError) throw signUpError;
-
-      const { error: profileError } = await supabase.from('profiles').insert([
-        { id: user.id, full_name: fullName, role: 'client' },
-      ]);
-
-      if (profileError) throw profileError;
 
       setSuccess(true);
     } catch (err) {
