@@ -1,12 +1,8 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import ScrollToTop from './components/ScrollToTop';
-// Add page imports here
 import Home from './pages/Home';
 import PortalLayout from '@/components/portal/PortalLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -29,76 +25,73 @@ import AdminActiveRequests from '@/pages/admin/AdminActiveRequests';
 import AdminReports from '@/pages/admin/AdminReports';
 import AdminInvoices from '@/pages/admin/AdminInvoices';
 import AdminMessages from '@/pages/admin/AdminMessages';
+import { SupabaseProvider } from "@/lib/supabase/client-react-router";
 
-const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+const router = createBrowserRouter([
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPassword />,
+  },
+  {
+    element: <ProtectedRoute redirectTo="/login" />,
+    children: [
+      {
+        path: "/",
+        element: <Home />,
+      },
+      {
+        element: <PortalLayout />,
+        children: [
+          { path: "/portal/dashboard", element: <ClientDashboard /> },
+          { path: "/portal/requests", element: <ClientRequests /> },
+          { path: "/portal/reports", element: <ClientReports /> },
+          { path: "/portal/invoices", element: <ClientInvoices /> },
+          { path: "/portal/messages", element: <ClientMessages /> },
+          { path: "/portal/invoices/:id", element: <ClientInvoiceDetail /> },
+          { path: "/portal/reports/:id", element: <ClientReportDetail /> },
+          { path: "/portal/settings", element: <AccountSettings /> },
+          { path: "/admin/dashboard", element: <AdminDashboard /> },
+          { path: "/admin/estates", element: <AdminEstates /> },
+          { path: "/admin/requests", element: <AdminRequests /> },
+          { path: "/admin/active-requests", element: <AdminActiveRequests /> },
+          { path: "/admin/reports", element: <AdminReports /> },
+          { path: "/admin/invoices", element: <AdminInvoices /> },
+          { path: "/admin/messages", element: <AdminMessages /> },
+        ],
+      },
+    ],
+  },
+  {
+    path: "*",
+    element: <PageNotFound />,
+  },
+]);
 
-  // Show loading spinner while checking app public settings or auth
-  if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
-    }
-  }
-
-  // Render the main app
-  return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route path="/" element={<Home />} />
-        <Route element={<PortalLayout />}>
-          <Route path="/portal/dashboard" element={<ClientDashboard />} />
-          <Route path="/portal/requests" element={<ClientRequests />} />
-          <Route path="/portal/reports" element={<ClientReports />} />
-          <Route path="/portal/invoices" element={<ClientInvoices />} />
-          <Route path="/portal/messages" element={<ClientMessages />} />
-          <Route path="/portal/invoices/:id" element={<ClientInvoiceDetail />} />
-          <Route path="/portal/reports/:id" element={<ClientReportDetail />} />
-          <Route path="/portal/settings" element={<AccountSettings />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/estates" element={<AdminEstates />} />
-          <Route path="/admin/requests" element={<AdminRequests />} />
-          <Route path="/admin/active-requests" element={<AdminActiveRequests />} />
-          <Route path="/admin/reports" element={<AdminReports />} />
-          <Route path="/admin/invoices" element={<AdminInvoices />} />
-          <Route path="/admin/messages" element={<AdminMessages />} />
-        </Route>
-      </Route>
-      <Route path="*" element={<PageNotFound />} />
-    </Routes>
-  );
-};
-
+import { AuthProvider } from "@/lib/AuthContext";
 
 function App() {
-
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <ScrollToTop />
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
-  )
+    <QueryClientProvider client={queryClientInstance}>
+      <SupabaseProvider>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </SupabaseProvider>
+      <Toaster />
+    </QueryClientProvider>
+  );
 }
 
-export default App
+export default App;

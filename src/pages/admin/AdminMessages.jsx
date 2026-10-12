@@ -1,185 +1,210 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { getConversations } from "@/lib/conversations";
+import { getMessages, sendMessage, subscribeToMessages } from "@/lib/messages";
 import { PageHeader, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageSquare, Send, Loader2, ArrowLeft, Building2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MessageSquare, Send, Loader2, Paperclip, PlusCircle } from "lucide-react";
+import { useSupabase } from "@/lib/supabase/client-react-router";
 
 export default function AdminMessages() {
-  const [conversations, setConversations] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [unread, setUnread] = useState({});
-  const [loading, setLoading] = useState(true);
+  const { user, supabase } = useSupabase();
+  const queryClient = useQueryClient();
+  const [selectedConversation, setSelectedConversation] = useState(null);
   const [body, setBody] = useState("");
-  const [sending, setSending] = useState(false);
+  const [attachment, setAttachment] = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [newConversationTitle, setNewConversationTitle] = useState("");
+  const [newConversationParticipants, setNewConversationParticipants] = useState("");
   const scrollRef = useRef(null);
 
-  const loadConversations = async () => {
-    const { items } = await base44.entities.Estate.filter({}, { sort: "-created_date", limit: 100 });
-    setConversations(items || []);
-    const counts = await base44.entities.Message.aggregate({ query: { from_role: "client", read: false }, groupBy: "estate_id" });
-    const map = {};
-    (counts.rows || []).forEach((row) => { map[row.estate_id] = row.count; });
-    setUnread(map);
-    setLoading(false);
-  };
+  const { data: conversations, isLoading: isLoadingConversations } = useQuery({
+    queryKey: ["conversations"],
+    queryFn: getConversations,
+  });
 
-  const loadThread = async (est) => {
-    if (!est) return;
-    const msgs = await base44.entities.Message.filter({ estate_id: est.id }, { sort: "created_date", limit: 200 });
-    setMessages(msgs.items || []);
-    if ((msgs.items || []).some((m) => m.from_role === "client" && !m.read)) {
-      await base44.entities.Message.updateMany({ estate_id: est.id, from_role: "client", read: false }, { $set: { read: true } });
-      setUnread((u) => ({ ...u, [est.id]: 0 }));
-    }
-  };
+  const { data: messages, isLoading: isLoadingMessages } = useQuery({
+    queryKey: ["messages", selectedConversation?.id],
+    queryFn: () => getMessages(selectedConversation.id),
+    enabled: !!selectedConversation,
+  });
 
-  useEffect(() => { loadConversations(); }, []);
+  const { mutate: doSendMessage, isLoading: isSendingMessage } = useMutation({
+    mutationFn: sendMessage,
+    onSuccess: () => {
+      setBody("");
+      setAttachment(null);
+      queryClient.invalidateQueries(["messages", selectedConversation?.id]);
+    },
+  });
 
-  // Live updates: incoming messages appear instantly on both sides
+  const { mutate: doCreateConversation, isLoading: isCreatingConversation } = useMutation({
+    mutationFn: ({ title, participantIds }) => base44.functions.invoke("create-conversation", { body: { title, participantIds } }),
+    onSuccess: () => {
+      setShowCreate(false);
+      setNewConversationTitle("");
+      setNewConversationParticipants("");
+      queryClient.invalidateQueries(["conversations"]);
+    },
+  });
+
   useEffect(() => {
-    const unsubscribe = base44.entities.Message.subscribe(() => {
-      loadConversations();
-      if (selected) loadThread(selected);
-    });
-    return unsubscribe;
-  }, [selected?.id]);
+    if (selectedConversation) {
+      const subscription = subscribeToMessages(selectedConversation.id, (newMessage) => {
+        queryClient.setQueryData(["messages", selectedConversation.id], (oldData) => {
+          if (!oldData) return [newMessage];
+          return [...oldData, newMessage];
+        });
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [selectedConversation, queryClient]);
 
-  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-
-  const handleSelect = async (est) => {
-    setSelected(est);
-    setMessages([]);
-    await loadThread(est);
-  };
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSend = async () => {
-    if (!body.trim() || !selected) return;
-    setSending(true);
-    const created = await base44.entities.Message.create({
-      estate_id: selected.id,
-      client_id: selected.client_id,
-      body: body.trim(),
-      from_role: "admin",
-      read: false,
-    });
-    setBody("");
-    setSending(false);
-    await loadThread(selected);
-    base44.functions.invoke("notifyNewMessage", { message_id: created.id }).catch((e) => console.error(e));
+    if (!body.trim() && !attachment) return;
+
+    let attachmentPath = null;
+    if (attachment) {
+      const { data, error } = await supabase.storage
+        .from("chat-attachments")
+        .upload(`${selectedConversation.id}/${Date.now()}-${attachment.name}`, attachment);
+
+      if (error) {
+        console.error("Error uploading attachment:", error);
+        return;
+      }
+      attachmentPath = data.path;
+    }
+
+    doSendMessage({ conversationId: selectedConversation.id, body: body.trim(), attachmentPath });
   };
 
-  if (loading) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;
+  const handleCreateConversation = () => {
+    const participantIds = newConversationParticipants.split(",").map(id => id.trim());
+    doCreateConversation({ title: newConversationTitle, participantIds: [...participantIds, user.id] });
+  };
+
+  if (isLoadingConversations) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;
 
   return (
-    <div>
-      <PageHeader
-        eyebrow="Direct Line"
-        title="Messages"
-        subtitle="Conversations with your clients across all managed estates."
-      />
-
-      <div className="grid lg:grid-cols-[280px_1fr] gap-4">
-        {/* Conversation list */}
-        <div className={cn(selected ? "hidden" : "block", "lg:block")}>
-          <SectionCard>
-            {conversations.length === 0 ? (
-              <EmptyState icon={Building2} title="No estates yet" description="Conversations appear once estates are added." />
-            ) : (
-              <div className="divide-y divide-border">
-                {conversations.map((est) => (
-                  <button
-                    key={est.id}
-                    onClick={() => handleSelect(est)}
-                    className={cn(
-                      "w-full text-left px-4 py-3.5 flex items-center justify-between gap-2 hover:bg-secondary/40 transition-colors",
-                      selected?.id === est.id && "bg-primary/10"
-                    )}
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm text-foreground truncate">{est.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                        {est.advisor_name || "Unassigned advisor"}
-                      </p>
-                    </div>
-                    {unread[est.id] > 0 && (
-                      <span className="shrink-0 h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold flex items-center justify-center">
-                        {unread[est.id]}
-                      </span>
-                    )}
-                  </button>
-                ))}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100dvh-9rem)]">
+      <div className="md:col-span-1 flex flex-col">
+        <PageHeader
+          eyebrow="Direct Line"
+          title="Conversations"
+          subtitle="Conversations with your clients across all managed estates."
+        />
+        <Button onClick={() => setShowCreate(!showCreate)} className="mb-4">
+          <PlusCircle className="h-4 w-4 mr-2" />
+          New Conversation
+        </Button>
+        {showCreate && (
+          <SectionCard className="mb-4">
+            <div className="p-4 space-y-4">
+              <div>
+                <Label htmlFor="conv-title">Title</Label>
+                <Input id="conv-title" value={newConversationTitle} onChange={(e) => setNewConversationTitle(e.target.value)} />
               </div>
-            )}
+              <div>
+                <Label htmlFor="conv-participants">Participant IDs (comma-separated)</Label>
+                <Input id="conv-participants" value={newConversationParticipants} onChange={(e) => setNewConversationParticipants(e.target.value)} />
+              </div>
+              <Button onClick={handleCreateConversation} disabled={isCreatingConversation}>
+                {isCreatingConversation ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create"}
+              </Button>
+            </div>
           </SectionCard>
-        </div>
-
-        {/* Thread */}
-        <div className={cn(selected ? "block" : "hidden", "lg:block")}>
-          {!selected ? (
-            <SectionCard>
-              <EmptyState icon={MessageSquare} title="Select a conversation" description="Choose an estate from the list to open its thread." />
-            </SectionCard>
+        )}
+        <SectionCard className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          {conversations?.length === 0 ? (
+            <EmptyState icon={MessageSquare} title="No conversations yet" description="Start a new conversation to begin." />
           ) : (
-            <SectionCard className="flex flex-col h-[calc(100vh-14rem)] min-h-0 overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="lg:hidden shrink-0"
-                  onClick={() => { setSelected(null); setMessages([]); }}
+            <div className="flex-1 overflow-y-auto">
+              {conversations?.map((conv) => (
+                <div
+                  key={conv.id}
+                  className={`p-4 border-b cursor-pointer ${selectedConversation?.id === conv.id ? "bg-secondary" : ""}`}
+                  onClick={() => setSelectedConversation(conv)}
                 >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{selected.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {selected.advisor_name ? `Advisor: ${selected.advisor_name}` : "No advisor assigned"}
+                  <p className="font-semibold">{conv.title}</p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {conv.last_message?.[0]?.body || "No messages yet"}
                   </p>
                 </div>
-              </div>
-
-              {messages.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <EmptyState icon={MessageSquare} title="No messages yet" description="Start the conversation with this client." />
+              ))}
+            </div>
+          )}
+        </SectionCard>
+      </div>
+      <div className="md:col-span-2 flex flex-col">
+        {selectedConversation ? (
+          <SectionCard className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {isLoadingMessages ? (
+                <div className="flex justify-center items-center h-full">
+                  <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {messages.map((m) => {
-                    const mine = m.from_role === "admin";
-                    return (
-                      <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[75%] rounded-lg px-4 py-3 ${mine ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}>
-                          <p className="text-sm whitespace-pre-wrap">{m.body}</p>
-                          <p className={`text-[10px] mt-1.5 ${mine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
-                            {new Date(m.created_date).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
-                          </p>
-                        </div>
+                messages?.map((m) => {
+                  const mine = m.sender_id === user.id;
+                  return (
+                    <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[75%] rounded-lg px-4 py-3 ${mine ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}>
+                        <p className="text-sm font-semibold">{m.sender.full_name}</p>
+                        <p className="text-sm whitespace-pre-wrap">{m.body}</p>
+                        {m.attachment_path && (
+                          <a
+                            href={supabase.storage.from("chat-attachments").getPublicUrl(m.attachment_path).publicURL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm underline mt-2 block"
+                          >
+                            View Attachment
+                          </a>
+                        )}
+                        <p className={`text-[10px] mt-1.5 ${mine ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                          {new Date(m.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </p>
                       </div>
-                    );
-                  })}
-                  <div ref={scrollRef} />
-                </div>
+                    </div>
+                  );
+                })
               )}
-
-              <div className="border-t border-border p-4 flex gap-3">
-                <Textarea
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  placeholder="Write a message..."
-                  rows={1}
-                  className="resize-none min-h-[44px] max-h-32"
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                />
-                <Button onClick={handleSend} disabled={sending || !body.trim()} className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
-              </div>
-            </SectionCard>
-          )}
-        </div>
+              <div ref={scrollRef} />
+            </div>
+            <div className="border-t border-border p-4 flex gap-3 items-center">
+              <input type="file" id="file-upload" className="hidden" onChange={(e) => setAttachment(e.target.files[0])} />
+              <Button asChild variant="ghost" size="icon">
+                <label htmlFor="file-upload">
+                  <Paperclip className="h-5 w-5" />
+                </label>
+              </Button>
+              <Textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Write a message..."
+                rows={1}
+                className="resize-none min-h-[44px] max-h-32"
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+              />
+              <Button onClick={handleSend} disabled={isSendingMessage || (!body.trim() && !attachment)} className="bg-primary text-primary-foreground hover:bg-primary/90 shrink-0">
+                {isSendingMessage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </div>
+          </SectionCard>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <EmptyState icon={MessageSquare} title="Select a conversation" description="Choose a conversation from the list to see messages." />
+          </div>
+        )}
       </div>
     </div>
   );
