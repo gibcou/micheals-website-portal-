@@ -30,6 +30,13 @@ The same codebase powers the web app, the iOS app, and the Android app (both pub
 - **Payment reminders** — a scheduled daily workflow finds overdue invoices and emails payment reminders automatically (`base44/workflows/Overdue Invoice Reminders.jsonc`).
 - **Status notifications** — when a request's status changes or a new message arrives, the recipient is notified in-app (and by email templates where configured).
 
+### Mobile & iOS Optimizations
+- **Pull-to-refresh** — touch-based refresh on Requests, Reports, and Invoices; each page runs on React Query and a pull refetches the active queries so lists stay in sync with the server.
+- **Bottom-sheet selects** — on viewports under 768px, the shared Select control renders options in a `vaul` bottom-sheet drawer (native-feel pickers); desktop keeps standard popover dropdowns.
+- **Tab stack memory** — the mobile bottom navigation restores each tab's last visited sub-route (e.g. an invoice detail), and tapping the active tab resets it to its root.
+- **Optimistic UI** — new message bubbles and invoice status changes appear instantly, rolling back automatically if the server call fails.
+- **Native-feel layout** — safe-area insets, sticky bottom navigation, 44px touch targets, and disabled rubber-band scrolling.
+
 ---
 
 ## Security & Access Control
