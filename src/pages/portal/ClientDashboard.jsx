@@ -20,13 +20,15 @@ export default function ClientDashboard() {
       const est = items[0];
       setEstate(est);
       if (est) {
-        const [reqs, invoices, reports] = await Promise.all([
+        const [reqs, openCount, invoices, reportCount, reports] = await Promise.all([
           base44.entities.ServiceRequest.filter({ estate_id: est.id, status: { $in: ["open", "in_progress", "scheduled"] } }, { sort: "-created_date", limit: 5 }),
+          base44.entities.ServiceRequest.count({ estate_id: est.id, status: { $in: ["open", "in_progress", "scheduled"] } }),
           base44.entities.Invoice.count({ estate_id: est.id, status: { $in: ["sent", "overdue"] } }),
+          base44.entities.WeeklyReport.count({ estate_id: est.id }),
           base44.entities.WeeklyReport.filter({ estate_id: est.id }, { sort: "-week_of", limit: 3 }),
         ]);
         setRecentRequests(reqs.items || []);
-        setStats({ openRequests: (reqs.items || []).length, unpaidInvoices: invoices, reports: (reports.items || []).length });
+        setStats({ openRequests: openCount, unpaidInvoices: invoices, reports: reportCount });
         setRecentReports(reports.items || []);
       }
     } finally {
@@ -69,9 +71,9 @@ export default function ClientDashboard() {
       </SectionCard>
 
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
-        <StatCard label="Open Requests" value={stats.openRequests} icon={ClipboardList} />
-        <StatCard label="Invoices Due" value={stats.unpaidInvoices} icon={CreditCard} />
-        <StatCard label="Reports Filed" value={stats.reports} icon={FileText} />
+        <Link to="/portal/requests" className="block"><StatCard label="Open Requests" value={stats.openRequests} icon={ClipboardList} /></Link>
+        <Link to="/portal/invoices" className="block"><StatCard label="Invoices Due" value={stats.unpaidInvoices} icon={CreditCard} /></Link>
+        <Link to="/portal/reports" className="block"><StatCard label="Reports Filed" value={stats.reports} icon={FileText} /></Link>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
