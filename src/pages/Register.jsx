@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,14 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const { supabase } = useSupabase();
+  const { supabase, user } = useSupabase();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,14 +33,19 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { full_name: fullName } },
       });
       if (signUpError) throw signUpError;
 
-      setSuccess(true);
+      if (data.session) {
+        // Email confirmation is off, so sign-up already produced an active
+        // session; the effect above will navigate once context picks it up.
+      } else {
+        setSuccess(true);
+      }
     } catch (err) {
       setError(err.message || "Registration failed");
     } finally {
