@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 const emptyForm = { name: "", address: "", type: "Primary residence", status: "onboarding", client_id: "", advisor_name: "", monthly_retainer: "", notes: "" };
 
 export default function AdminEstates() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [estates, setEstates] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,6 +38,18 @@ export default function AdminEstates() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Arriving from the Clients page with "Add Estate" for a specific
+  // client opens this dialog pre-filled with that client selected.
+  useEffect(() => {
+    const presetClientId = location.state?.presetClientId;
+    if (presetClientId) {
+      setEditing(null);
+      setForm({ ...emptyForm, client_id: presetClientId });
+      setOpen(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (est) => { setEditing(est); setForm({ name: est.name, address: est.address, type: est.type, status: est.status, client_id: est.client_id || "", advisor_name: est.advisor_name || "", monthly_retainer: est.monthly_retainer || "", notes: est.notes || "" }); setOpen(true); };
