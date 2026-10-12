@@ -35,7 +35,11 @@ export default function NotificationBell() {
   // Live updates: new notifications appear instantly
   useEffect(() => {
     if (!userId) return;
-    const channel = supabase.channel('notifications')
+    // Channel names are just local pub/sub topics, so make this one unique
+    // per mount: a shared name like 'notifications' gets reused by the
+    // Supabase client, and calling .on() on an already-subscribed channel
+    // (e.g. from an overlapping mount during a route transition) throws.
+    const channel = supabase.channel(`notifications-${userId}-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${userId}` }, payload => {
         load();
       })
