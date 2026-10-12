@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getConversations, createConversation } from "@/lib/conversations";
 import { getMessages, sendMessage, subscribeToMessages } from "@/lib/messages";
@@ -13,6 +14,8 @@ import { useSupabase } from "@/lib/supabase/client-react-router";
 
 export default function AdminMessages() {
   const { user, supabase } = useSupabase();
+  const location = useLocation();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [body, setBody] = useState("");
@@ -34,6 +37,17 @@ export default function AdminMessages() {
   const toggleParticipant = (id) => {
     setSelectedParticipants((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
   };
+
+  // Arriving from the Clients page with "Message" for a specific client
+  // opens the new-conversation form with that client pre-selected.
+  useEffect(() => {
+    const presetClientId = location.state?.presetClientId;
+    if (presetClientId) {
+      setShowCreate(true);
+      setSelectedParticipants([presetClientId]);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const { data: conversations, isLoading: isLoadingConversations } = useQuery({
     queryKey: ["conversations"],

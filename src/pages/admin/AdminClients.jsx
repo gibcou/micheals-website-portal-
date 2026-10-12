@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import { PageHeader, SectionCard, EmptyState } from "@/components/portal/Shared";
-import { Users, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Mail, MessageSquare, Building2 } from "lucide-react";
 
 export default function AdminClients() {
+  const navigate = useNavigate();
   const [clients, setClients] = useState([]);
   const [estatesByClient, setEstatesByClient] = useState({});
   const [loading, setLoading] = useState(true);
@@ -54,6 +57,7 @@ export default function AdminClients() {
                   <th className="px-6 py-3 font-medium">Email</th>
                   <th className="px-6 py-3 font-medium">Estates</th>
                   <th className="px-6 py-3 font-medium">Joined</th>
+                  <th className="px-6 py-3 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -69,6 +73,24 @@ export default function AdminClients() {
                         {estates.length > 0 ? estates.map((e) => e.name).join(", ") : <span className="italic">None assigned</span>}
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate("/admin/messages", { state: { presetClientId: c.id } })}
+                          >
+                            <MessageSquare className="h-3.5 w-3.5 mr-1" />Message
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate("/admin/estates", { state: { presetClientId: c.id } })}
+                          >
+                            <Building2 className="h-3.5 w-3.5 mr-1" />Add Estate
+                          </Button>
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}
