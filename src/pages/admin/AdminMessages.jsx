@@ -38,6 +38,16 @@ export default function AdminMessages() {
     setSelectedParticipants((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
   };
 
+  // The client(s) in a conversation, i.e. every participant but the
+  // admin viewing it - shown as the conversation's name in the list.
+  const getClientNames = (conv) => {
+    const names = (conv.conversation_participants || [])
+      .filter((p) => p.user_id !== user?.id)
+      .map((p) => p.profiles?.full_name)
+      .filter(Boolean);
+    return names.length > 0 ? names.join(", ") : conv.title || "Conversation";
+  };
+
   // Arriving from the Clients page with "Message" for a specific client
   // opens the new-conversation form with that client pre-selected.
   useEffect(() => {
@@ -170,7 +180,8 @@ export default function AdminMessages() {
                   className={`p-4 border-b cursor-pointer ${selectedConversation?.id === conv.id ? "bg-secondary" : ""}`}
                   onClick={() => setSelectedConversation(conv)}
                 >
-                  <p className="font-semibold">{conv.title}</p>
+                  <p className="font-semibold">{getClientNames(conv)}</p>
+                  {conv.title && <p className="text-xs text-muted-foreground truncate">{conv.title}</p>}
                   <p className="text-sm text-muted-foreground truncate">
                     {conv.last_message?.[0]?.body || "No messages yet"}
                   </p>
