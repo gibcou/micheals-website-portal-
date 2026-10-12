@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import NotificationBell from "@/components/portal/NotificationBell";
-import BottomNav from "@/components/portal/BottomNav";
 import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, Eye, ShieldCheck, Flame, Settings, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -152,12 +151,10 @@ export default function PortalLayout() {
           <NotificationBell />
         </header>
 
-        <main className="flex-1 px-4 sm:px-6 lg:px-10 pt-6 pb-28 sm:pt-8 sm:pb-28 md:pb-8 max-w-6xl w-full mx-auto animate-fade-in">
+        <main className="flex-1 px-4 sm:px-6 lg:px-10 pt-6 pb-8 sm:pt-8 max-w-6xl w-full mx-auto animate-fade-in">
           <Outlet />
         </main>
       </div>
-
-      {showClientPortal && <BottomNav items={clientNav} />}
     </div>
   );
 }
