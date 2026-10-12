@@ -132,7 +132,7 @@ export default function PortalLayout() {
           <NotificationBell />
         </header>
 
-        <main className="flex-1 px-6 sm:px-10 py-8 max-w-6xl w-full mx-auto animate-fade-in">
+        <main className="flex-1 px-4 sm:px-6 lg:px-10 py-6 sm:py-8 max-w-6xl w-full mx-auto animate-fade-in">
           <Outlet />
         </main>
       </div>

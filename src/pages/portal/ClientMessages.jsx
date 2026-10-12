@@ -53,7 +53,7 @@ export default function ClientMessages() {
   if (loading) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100dvh-9rem)]">
       <PageHeader
         eyebrow="Direct Line"
         title="Messages"
