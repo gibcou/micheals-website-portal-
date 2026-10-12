@@ -15,7 +15,7 @@ export default function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const supabase = useSupabase();
+  const { supabase } = useSupabase();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
