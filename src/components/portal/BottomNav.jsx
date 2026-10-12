@@ -26,7 +26,11 @@ export default function BottomNav({ items }) {
           <button
             key={item.to}
             type="button"
-            onClick={() => navigate(tabHistory.current[item.to] || item.to)}
+            onClick={() => {
+              // Tapping the already-active tab resets it to its root
+              if (isActive(item)) tabHistory.current[item.to] = item.to;
+              navigate(tabHistory.current[item.to] || item.to);
+            }}
             className={cn(
               "flex flex-col items-center justify-center gap-1 flex-1 py-2 text-[10px] uppercase tracking-wider transition-colors",
               isActive(item) ? "text-primary" : "text-muted-foreground"

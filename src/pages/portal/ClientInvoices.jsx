@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
@@ -8,19 +9,15 @@ import PullToRefresh from "@/components/portal/PullToRefresh";
 
 export default function ClientInvoices() {
   const navigate = useNavigate();
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const load = async () => {
-    const { items } = await base44.entities.Estate.filter({}, { sort: "-created_date", limit: 1 });
-    if (items[0]) {
+  const { data: invoices = [], isLoading: loading } = useQuery({
+    queryKey: ["portal", "invoices"],
+    queryFn: async () => {
+      const { items } = await base44.entities.Estate.filter({}, { sort: "-created_date", limit: 1 });
+      if (!items[0]) return [];
       const invs = await base44.entities.Invoice.filter({ estate_id: items[0].id }, { sort: "-issue_date", limit: 50 });
-      setInvoices(invs.items || []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, []);
+      return invs.items || [];
+    },
+  });
 
   if (loading) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;
 
@@ -32,7 +29,7 @@ export default function ClientInvoices() {
         subtitle="Your engagement statements and payment records."
       />
 
-      <PullToRefresh onRefresh={load}>
+      <PullToRefresh>
       {invoices.length === 0 ? (
         <SectionCard>
           <EmptyState icon={CreditCard} title="No invoices" description="Your billing statements will appear here." />

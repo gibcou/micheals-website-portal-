@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +8,7 @@ const THRESHOLD = 70;
 // Native-like pull-to-refresh for touch devices: pulling the list down past
 // the threshold while at the top of the page triggers a refresh.
 export default function PullToRefresh({ onRefresh, children }) {
+  const queryClient = useQueryClient();
   const startY = useRef(null);
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -29,6 +31,8 @@ export default function PullToRefresh({ onRefresh, children }) {
       setRefreshing(true);
       try {
         await onRefresh?.();
+        // Refetch every mounted React Query so lists stay in sync with the server
+        await queryClient.refetchQueries({ type: "active" });
       } finally {
         setTimeout(() => setRefreshing(false), 350);
       }

@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import MobileSelect from "@/components/portal/MobileSelect";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
 // Shared "New Service Request" dialog for the client portal.
@@ -58,31 +58,27 @@ export default function RequestFormDialog({ estate, open, onOpenChange, onCreate
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Category</Label>
-              <MobileSelect
-                value={category}
-                onValueChange={setCategory}
-                placeholder="Category"
-                options={[
-                  { value: "Maintenance", label: "Maintenance" },
-                  { value: "Cleaning", label: "Cleaning" },
-                  { value: "Property", label: "Property" },
-                  { value: "Other", label: "Other" },
-                ]}
-              />
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue placeholder="Category" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Maintenance">Maintenance</SelectItem>
+                  <SelectItem value="Cleaning">Cleaning</SelectItem>
+                  <SelectItem value="Property">Property</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>Priority</Label>
-              <MobileSelect
-                value={priority}
-                onValueChange={setPriority}
-                placeholder="Priority"
-                options={[
-                  { value: "low", label: "Low" },
-                  { value: "medium", label: "Medium" },
-                  { value: "high", label: "High" },
-                  { value: "urgent", label: "Urgent" },
-                ]}
-              />
+              <Select value={priority} onValueChange={setPriority}>
+                <SelectTrigger><SelectValue placeholder="Priority" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div className="space-y-2">

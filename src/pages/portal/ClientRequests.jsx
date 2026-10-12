@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
@@ -8,23 +9,23 @@ import { Plus, ClipboardList } from "lucide-react";
 import PullToRefresh from "@/components/portal/PullToRefresh";
 
 export default function ClientRequests() {
-  const [requests, setRequests] = useState([]);
-  const [estate, setEstate] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
 
-  const load = async () => {
-    const { items } = await base44.entities.Estate.filter({}, { sort: "-created_date", limit: 1 });
-    const est = items[0];
-    setEstate(est);
-    if (est) {
-      const reqs = await base44.entities.ServiceRequest.filter({ estate_id: est.id }, { sort: "-created_date", limit: 50 });
-      setRequests(reqs.items || []);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => { load(); }, []);
+  // Loaded through React Query so pull-to-refresh can refetch active queries
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["portal", "requests"],
+    queryFn: async () => {
+      const { items } = await base44.entities.Estate.filter({}, { sort: "-created_date", limit: 1 });
+      const est = items[0];
+      const reqs = est
+        ? await base44.entities.ServiceRequest.filter({ estate_id: est.id }, { sort: "-created_date", limit: 50 })
+        : { items: [] };
+      return { estate: est, requests: reqs.items || [] };
+    },
+  });
+  const estate = data?.estate;
+  const requests = data?.requests || [];
 
   if (loading) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;
 
@@ -37,7 +38,7 @@ export default function ClientRequests() {
         action={<Button onClick={() => setOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90"><Plus className="h-4 w-4 mr-1" />New Request</Button>}
       />
 
-      <PullToRefresh onRefresh={load}>
+      <PullToRefresh>
       {requests.length === 0 ? (
         <SectionCard>
           <EmptyState
@@ -78,7 +79,7 @@ export default function ClientRequests() {
         estate={estate}
         open={open}
         onOpenChange={setOpen}
-        onCreated={load}
+        onCreated={() => queryClient.invalidateQueries({ queryKey: ["portal", "requests"] })}
       />
     </div>
   );
