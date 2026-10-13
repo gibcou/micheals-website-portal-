@@ -7,7 +7,7 @@ import RequestFormDialog from "@/components/portal/RequestFormDialog";
 import { ClipboardList, FileText, CreditCard, Calendar, MapPin, User, ArrowRight, Building2, Plus } from "lucide-react";
 
 export default function ClientDashboard() {
-  const [estate, setEstate] = useState(null);
+  const [estates, setEstates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ openRequests: 0, unpaidInvoices: 0, reports: 0 });
   const [recentRequests, setRecentRequests] = useState([]);
@@ -16,18 +16,17 @@ export default function ClientDashboard() {
 
   const load = async () => {
     try {
-      const { data: est, error: estateError } = await supabase
+      const { data: ests, error: estateError } = await supabase
         .from('estates')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .order('created_at', { ascending: false });
 
-      if (estateError) console.error("Error fetching estate", estateError);
+      if (estateError) console.error("Error fetching estates", estateError);
 
-      setEstate(est);
+      setEstates(ests || []);
 
-      if (est) {
+      if (ests && ests.length > 0) {
+        const ids = ests.map((e) => e.id);
         const [
           reqsRes,
           openCountRes,
@@ -35,11 +34,11 @@ export default function ClientDashboard() {
           reportCountRes,
           reportsRes,
         ] = await Promise.all([
-          supabase.from('service_requests').select('*').eq('estate_id', est.id).in('status', ["open", "in_progress", "scheduled"]).order('created_at', { ascending: false }).limit(5),
-          supabase.from('service_requests').select('*', { count: 'exact', head: true }).eq('estate_id', est.id).in('status', ["open", "in_progress", "scheduled"]),
-          supabase.from('invoices').select('*', { count: 'exact', head: true }).eq('estate_id', est.id).in('status', ["sent", "overdue"]),
-          supabase.from('weekly_reports').select('*', { count: 'exact', head: true }).eq('estate_id', est.id),
-          supabase.from('weekly_reports').select('*').eq('estate_id', est.id).order('week_of', { ascending: false }).limit(3),
+          supabase.from('service_requests').select('*').in('estate_id', ids).in('status', ["open", "in_progress", "scheduled"]).order('created_at', { ascending: false }).limit(5),
+          supabase.from('service_requests').select('*', { count: 'exact', head: true }).in('estate_id', ids).in('status', ["open", "in_progress", "scheduled"]),
+          supabase.from('invoices').select('*', { count: 'exact', head: true }).in('estate_id', ids).in('status', ["sent", "overdue"]),
+          supabase.from('weekly_reports').select('*', { count: 'exact', head: true }).in('estate_id', ids),
+          supabase.from('weekly_reports').select('*').in('estate_id', ids).order('week_of', { ascending: false }).limit(3),
         ]);
 
         setRecentRequests(reqsRes.data || []);
@@ -56,7 +55,7 @@ export default function ClientDashboard() {
   useEffect(() => { load(); }, []);
 
   if (loading) return <DashboardSkeleton />;
-  if (!estate) {
+  if (estates.length === 0) {
     return (
       <EmptyState
         icon={Building2}
@@ -66,11 +65,14 @@ export default function ClientDashboard() {
     );
   }
 
+  const primary = estates[0];
+  const isMulti = estates.length > 1;
+
   return (
     <div>
       <PageHeader
-        eyebrow="Your Estate"
-        title={estate.name}
+        eyebrow={isMulti ? "Your Properties" : "Your Estate"}
+        title={isMulti ? `${estates.length} Properties` : primary.name}
         subtitle="A single view of everything we're caring for on your behalf."
         action={
           <Button onClick={() => setRequestOpen(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -79,13 +81,25 @@ export default function ClientDashboard() {
         }
       />
 
-      <SectionCard className="p-6 mb-8">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <InfoRow icon={MapPin} label="Location" value={estate.address} />
-          <InfoRow icon={Building2} label="Estate Type" value={estate.type} />
-          <InfoRow icon={User} label="Your Advisor" value={estate.advisor_name || "To be assigned"} />
+      {isMulti ? (
+        <div className="grid sm:grid-cols-2 gap-4 mb-8">
+          {estates.map((e) => (
+            <SectionCard key={e.id} className="p-5">
+              <h3 className="font-display text-lg text-foreground">{e.name}</h3>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5"><MapPin className="h-3 w-3" />{e.address}</p>
+              <p className="text-xs text-muted-foreground mt-1">{e.type}</p>
+            </SectionCard>
+          ))}
         </div>
-      </SectionCard>
+      ) : (
+        <SectionCard className="p-6 mb-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <InfoRow icon={MapPin} label="Location" value={primary.address} />
+            <InfoRow icon={Building2} label="Estate Type" value={primary.type} />
+            <InfoRow icon={User} label="Your Advisor" value={primary.advisor_name || "To be assigned"} />
+          </div>
+        </SectionCard>
+      )}
 
       <div className="grid sm:grid-cols-3 gap-4 mb-8">
         <Link to="/portal/requests" className="block"><StatCard label="Open Requests" value={stats.openRequests} icon={ClipboardList} /></Link>
@@ -105,7 +119,7 @@ export default function ClientDashboard() {
                   <div key={r.id} className="p-4 flex items-center justify-between hover:bg-secondary/30 transition-colors">
                     <div className="min-w-0">
                       <p className="text-sm text-foreground truncate">{r.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{r.category}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{isMulti && r.estate_name ? `${r.estate_name} · ` : ""}{r.category}</p>
                     </div>
                     <StatusBadge status={r.status} />
                   </div>
@@ -137,7 +151,7 @@ export default function ClientDashboard() {
       </div>
 
       <RequestFormDialog
-        estate={estate}
+        estates={estates}
         open={requestOpen}
         onOpenChange={setRequestOpen}
         onCreated={load}

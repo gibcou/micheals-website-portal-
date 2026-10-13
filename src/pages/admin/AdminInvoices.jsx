@@ -109,7 +109,7 @@ export default function AdminInvoices() {
         <SectionCard>
           <div className="divide-y divide-border">
             {invoices.map((inv) => (
-              <div key={inv.id} className="p-5 flex items-center justify-between gap-4">
+              <div key={inv.id} className="p-5 flex items-center justify-between gap-4 cursor-pointer hover:bg-secondary/30 transition-colors" onClick={() => openEdit(inv)}>
                 <div className="min-w-0">
                   <p className="text-foreground font-medium">{inv.invoice_number}</p>
                   <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
@@ -120,8 +120,8 @@ export default function AdminInvoices() {
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="font-display text-xl text-foreground hidden sm:block">${(inv.amount || 0).toLocaleString()}</span>
                   <StatusBadge status={inv.status} />
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(inv)} aria-label="Edit invoice"><Pencil className="h-3.5 w-3.5" /></Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleting(inv)} aria-label="Delete invoice"><Trash2 className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); openEdit(inv); }} aria-label="Edit invoice"><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleting(inv); }} aria-label="Delete invoice"><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               </div>
             ))}
