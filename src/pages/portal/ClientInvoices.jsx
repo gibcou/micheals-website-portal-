@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
@@ -11,11 +11,12 @@ import { downloadInvoicePdf } from "@/lib/pdf";
 export default function ClientInvoices() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { effectiveClientId } = useOutletContext() || {};
   const { data: invoices = [], isLoading: loading } = useQuery({
-    queryKey: ["portal", "invoices"],
+    queryKey: ["portal", "invoices", effectiveClientId],
+    enabled: !!effectiveClientId,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: estates, error: estateError } = await supabase.from('estates').select('id').eq('client_id', user.id);
+      const { data: estates, error: estateError } = await supabase.from('estates').select('id').eq('client_id', effectiveClientId);
       if (estateError) console.error("Error fetching estates", estateError);
       if (!estates || estates.length === 0) return [];
       const { data: invs, error: invsError } = await supabase.from('invoices').select('*').in('estate_id', estates.map((e) => e.id)).order('issue_date', { ascending: false }).limit(50);

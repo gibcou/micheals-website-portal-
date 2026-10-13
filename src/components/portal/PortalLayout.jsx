@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import NotificationBell from "@/components/portal/NotificationBell";
-import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, Eye, ShieldCheck, Flame, Settings, Users, FileSignature } from "lucide-react";
+import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, Eye, ShieldCheck, Flame, Settings, Users, FileSignature, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const clientNav = [
@@ -14,6 +14,11 @@ const clientNav = [
   { to: "/portal/messages", label: "Messages", icon: MessageSquare },
   { to: "/portal/settings", label: "Settings", icon: Settings, tab: "Profile" },
 ];
+
+// Messages and Settings stay tied to whoever is actually logged in (sending
+// a message while impersonating would misattribute it), so impersonating a
+// specific client shows only the read-focused tabs.
+const impersonatedClientNav = clientNav.filter((item) => item.label !== "Messages" && item.label !== "Settings");
 
 const adminNav = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -31,6 +36,7 @@ export default function PortalLayout() {
   const [user, setUser] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [viewAsClient, setViewAsClient] = useState(false);
+  const [viewingClient, setViewingClient] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -55,9 +61,25 @@ export default function PortalLayout() {
     fetchUser();
   }, [navigate]);
 
+  // Admin Clients links here with a specific client to view; pick it up once, then
+  // clear the router state so refreshing or navigating away doesn't re-trigger it.
+  useEffect(() => {
+    if (location.state?.viewAsClient) {
+      setViewingClient(location.state.viewAsClient);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, navigate]);
+
   const isAdmin = user?.role === "admin";
-  const showClientPortal = !isAdmin || viewAsClient;
-  const nav = showClientPortal ? clientNav : adminNav;
+  const showClientPortal = !isAdmin || viewAsClient || !!viewingClient;
+  const nav = showClientPortal ? (viewingClient ? impersonatedClientNav : clientNav) : adminNav;
+  const effectiveClientId = viewingClient ? viewingClient.id : user?.id;
+
+  const exitImpersonation = () => {
+    setViewingClient(null);
+    setViewAsClient(false);
+    navigate("/admin/clients");
+  };
 
   // Admin-only routes: clients are redirected to their portal
   if (user && !isAdmin && location.pathname.startsWith("/admin")) {
@@ -116,14 +138,18 @@ export default function PortalLayout() {
           {isAdmin && (
             <button
               onClick={() => {
+                if (viewingClient) {
+                  exitImpersonation();
+                  return;
+                }
                 setViewAsClient(!viewAsClient);
                 setMobileOpen(false);
                 navigate(!viewAsClient ? "/portal/dashboard" : "/admin/dashboard");
               }}
               className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 w-full transition-colors"
             >
-              {viewAsClient ? <ShieldCheck className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              {viewAsClient ? "Admin Portal" : "View Client Portal"}
+              {viewAsClient || viewingClient ? <ShieldCheck className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {viewAsClient || viewingClient ? "Admin Portal" : "View Client Portal"}
             </button>
           )}
           <button
@@ -153,8 +179,20 @@ export default function PortalLayout() {
           <NotificationBell />
         </header>
 
+        {viewingClient && (
+          <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-4 sm:px-6 lg:px-10 py-2.5 bg-primary/10 border-b border-primary/20 text-sm">
+            <span className="flex items-center gap-2 text-primary">
+              <Eye className="h-3.5 w-3.5 shrink-0" />
+              Viewing as <strong className="font-medium">{viewingClient.full_name || viewingClient.email}</strong>
+            </span>
+            <button onClick={exitImpersonation} className="flex items-center gap-1 text-muted-foreground hover:text-foreground shrink-0">
+              <X className="h-3.5 w-3.5" />Exit
+            </button>
+          </div>
+        )}
+
         <main className="flex-1 px-4 sm:px-6 lg:px-10 pt-6 pb-8 sm:pt-8 max-w-6xl w-full mx-auto animate-fade-in">
-          <Outlet />
+          <Outlet context={{ effectiveClientId, isImpersonating: !!viewingClient }} />
         </main>
       </div>
     </div>

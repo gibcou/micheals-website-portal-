@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
 import { PageHeader, SectionCard, EmptyState } from "@/components/portal/Shared";
@@ -8,11 +8,12 @@ import PullToRefresh from "@/components/portal/PullToRefresh";
 
 export default function ClientReports() {
   const navigate = useNavigate();
+  const { effectiveClientId } = useOutletContext() || {};
   const { data: reports = [], isLoading: loading } = useQuery({
-    queryKey: ["portal", "reports"],
+    queryKey: ["portal", "reports", effectiveClientId],
+    enabled: !!effectiveClientId,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: estates, error: estateError } = await supabase.from('estates').select('id').eq('client_id', user.id);
+      const { data: estates, error: estateError } = await supabase.from('estates').select('id').eq('client_id', effectiveClientId);
       if (estateError) console.error("Error fetching estates", estateError);
       if (!estates || estates.length === 0) return [];
       const { data: reps, error: repsError } = await supabase.from('weekly_reports').select('*').in('estate_id', estates.map((e) => e.id)).order('week_of', { ascending: false }).limit(50);
