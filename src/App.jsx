@@ -13,6 +13,7 @@ import ClientRequests from '@/pages/portal/ClientRequests';
 import ClientReports from '@/pages/portal/ClientReports';
 import ClientInvoices from '@/pages/portal/ClientInvoices';
 import ClientMessages from '@/pages/portal/ClientMessages';
+import ClientContracts from '@/pages/portal/ClientContracts';
 import ClientInvoiceDetail from '@/pages/portal/ClientInvoiceDetail';
 import ClientReportDetail from '@/pages/portal/ClientReportDetail';
 import AccountSettings from '@/pages/portal/AccountSettings';
@@ -24,6 +25,7 @@ import AdminActiveRequests from '@/pages/admin/AdminActiveRequests';
 import AdminReports from '@/pages/admin/AdminReports';
 import AdminInvoices from '@/pages/admin/AdminInvoices';
 import AdminMessages from '@/pages/admin/AdminMessages';
+import AdminContracts from '@/pages/admin/AdminContracts';
 
 const router = createBrowserRouter([
   {
@@ -57,6 +59,7 @@ const router = createBrowserRouter([
           { path: "/portal/reports", element: <ClientReports /> },
           { path: "/portal/invoices", element: <ClientInvoices /> },
           { path: "/portal/messages", element: <ClientMessages /> },
+          { path: "/portal/contracts", element: <ClientContracts /> },
           { path: "/portal/invoices/:id", element: <ClientInvoiceDetail /> },
           { path: "/portal/reports/:id", element: <ClientReportDetail /> },
           { path: "/portal/settings", element: <AccountSettings /> },
@@ -68,6 +71,7 @@ const router = createBrowserRouter([
           { path: "/admin/reports", element: <AdminReports /> },
           { path: "/admin/invoices", element: <AdminInvoices /> },
           { path: "/admin/messages", element: <AdminMessages /> },
+          { path: "/admin/contracts", element: <AdminContracts /> },
         ],
       },
     ],
