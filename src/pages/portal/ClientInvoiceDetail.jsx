@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, CreditCard, Loader2, FileText, Calendar } from "lucide-react";
+import { ArrowLeft, CreditCard, Loader2, FileText, Calendar, Download } from "lucide-react";
+import { downloadInvoicePdf } from "@/lib/pdf";
 
 export default function ClientInvoiceDetail() {
   const { id } = useParams();
@@ -97,7 +98,7 @@ export default function ClientInvoiceDetail() {
           )}
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap items-center gap-3">
           {invoice.status !== "paid" ? (
             <Button onClick={handlePay} disabled={paying} className="bg-primary text-primary-foreground hover:bg-primary/90">
               {paying ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CreditCard className="h-4 w-4 mr-1" />}
@@ -108,6 +109,9 @@ export default function ClientInvoiceDetail() {
               <FileText className="h-4 w-4" /> Paid{invoice.paid_date ? ` on ${invoice.paid_date}` : ""}
             </p>
           )}
+          <Button variant="outline" onClick={() => downloadInvoicePdf(invoice)}>
+            <Download className="h-4 w-4 mr-1" />Download PDF
+          </Button>
         </div>
       </SectionCard>
     </div>

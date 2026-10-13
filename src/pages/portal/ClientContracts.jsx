@@ -3,7 +3,8 @@ import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { FileSignature, ExternalLink } from "lucide-react";
+import { FileSignature, ExternalLink, Download } from "lucide-react";
+import { downloadContractPdf } from "@/lib/pdf";
 
 export default function ClientContracts() {
   const [contracts, setContracts] = useState([]);
@@ -49,6 +50,9 @@ export default function ClientContracts() {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <StatusBadge status={c.status} />
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); downloadContractPdf(c); }} aria-label="Download contract PDF">
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
             </SectionCard>
@@ -89,6 +93,9 @@ export default function ClientContracts() {
                     </a>
                   </Button>
                 )}
+                <Button variant="outline" onClick={() => downloadContractPdf(viewing)}>
+                  <Download className="h-4 w-4 mr-1" />Download PDF
+                </Button>
                 <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
               </DialogFooter>
             </>
