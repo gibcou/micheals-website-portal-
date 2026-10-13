@@ -4,8 +4,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Calendar } from "lucide-react";
+import { CreditCard, Calendar, Download } from "lucide-react";
 import PullToRefresh from "@/components/portal/PullToRefresh";
+import { downloadInvoicePdf } from "@/lib/pdf";
 
 export default function ClientInvoices() {
   const navigate = useNavigate();
@@ -69,6 +70,15 @@ export default function ClientInvoices() {
                       <CreditCard className="h-3.5 w-3.5 mr-1" />Pay
                     </Button>
                   )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => { e.stopPropagation(); downloadInvoicePdf(inv); }}
+                    aria-label="Download invoice PDF"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </Button>
                   <StatusBadge status={inv.status} />
                 </div>
               </div>

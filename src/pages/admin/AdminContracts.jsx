@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileSignature, Plus, Loader2, RefreshCw, Send, Check, AlertTriangle } from "lucide-react";
+import { FileSignature, Plus, Loader2, RefreshCw, Send, Check, AlertTriangle, Download } from "lucide-react";
+import { downloadContractPdf } from "@/lib/pdf";
 
 const emptyForm = { title: "", client_id: "", estate_id: "", start_date: "", end_date: "", notes: "" };
 const RENEWAL_WINDOW_DAYS = 60;
@@ -185,6 +186,9 @@ export default function AdminContracts() {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <StatusBadge status={c.status} />
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); downloadContractPdf(c); }} aria-label="Download contract PDF">
+                      <Download className="h-3.5 w-3.5" />
+                    </Button>
                     {c.status === "draft" && (
                       <Button variant="ghost" size="sm" disabled={actingOn === c.id} onClick={(e) => { e.stopPropagation(); handleSend(c); }}>
                         {actingOn === c.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}Send for Signature
@@ -291,6 +295,9 @@ export default function AdminContracts() {
                   )}
                 </div>
                 <DialogFooter>
+                  <Button variant="outline" onClick={() => downloadContractPdf(viewing)}>
+                    <Download className="h-4 w-4 mr-1" />Download PDF
+                  </Button>
                   {viewing.status === "draft" && (
                     <Button disabled={actingOn === viewing.id} onClick={() => { handleSend(viewing); setViewing(null); }} className="bg-primary text-primary-foreground hover:bg-primary/90">
                       <Send className="h-4 w-4 mr-1" />Send for Signature

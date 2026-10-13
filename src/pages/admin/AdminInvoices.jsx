@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, CreditCard, Loader2, Calendar, Pencil, Trash2 } from "lucide-react";
+import { Plus, CreditCard, Loader2, Calendar, Pencil, Trash2, Download } from "lucide-react";
+import { downloadInvoicePdf } from "@/lib/pdf";
 
 const emptyForm = { invoice_number: "", estate_id: "", amount: "", issue_date: "", due_date: "", description: "", status: "sent" };
 
@@ -120,6 +121,7 @@ export default function AdminInvoices() {
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="font-display text-xl text-foreground hidden sm:block">${(inv.amount || 0).toLocaleString()}</span>
                   <StatusBadge status={inv.status} />
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); downloadInvoicePdf(inv); }} aria-label="Download invoice PDF"><Download className="h-3.5 w-3.5" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); openEdit(inv); }} aria-label="Edit invoice"><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleting(inv); }} aria-label="Delete invoice"><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
