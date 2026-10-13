@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import NotificationBell from "@/components/portal/NotificationBell";
-import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, Eye, ShieldCheck, Flame, Settings, Users } from "lucide-react";
+import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, Eye, ShieldCheck, Flame, Settings, Users, FileSignature } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const clientNav = [
@@ -10,6 +10,7 @@ const clientNav = [
   { to: "/portal/requests", label: "Service Requests", icon: ClipboardList },
   { to: "/portal/reports", label: "Weekly Reports", icon: FileText },
   { to: "/portal/invoices", label: "Invoices", icon: CreditCard },
+  { to: "/portal/contracts", label: "Contracts", icon: FileSignature },
   { to: "/portal/messages", label: "Messages", icon: MessageSquare },
   { to: "/portal/settings", label: "Settings", icon: Settings, tab: "Profile" },
 ];
@@ -22,6 +23,7 @@ const adminNav = [
   { to: "/admin/active-requests", label: "Needs Attention", icon: Flame },
   { to: "/admin/reports", label: "Weekly Reports", icon: FileText },
   { to: "/admin/invoices", label: "Invoices", icon: CreditCard },
+  { to: "/admin/contracts", label: "Contracts", icon: FileSignature },
   { to: "/admin/messages", label: "Messages", icon: MessageSquare },
 ];
 
