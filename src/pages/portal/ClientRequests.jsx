@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
@@ -10,17 +11,20 @@ import { Plus, ClipboardList, Calendar } from "lucide-react";
 import PullToRefresh from "@/components/portal/PullToRefresh";
 
 export default function ClientRequests() {
+  const { effectiveClientId } = useOutletContext() || {};
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [viewing, setViewing] = useState(null);
 
   // Loaded through React Query so pull-to-refresh can refetch active queries
   const { data, isLoading: loading } = useQuery({
-    queryKey: ["portal", "requests"],
+    queryKey: ["portal", "requests", effectiveClientId],
+    enabled: !!effectiveClientId,
     queryFn: async () => {
       const { data: estates, error: estateError } = await supabase
         .from('estates')
         .select('*')
+        .eq('client_id', effectiveClientId)
         .order('created_at', { ascending: false });
 
       if (estateError) {

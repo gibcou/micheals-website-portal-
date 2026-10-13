@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import { PageHeader, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
-import { Users, Mail, MessageSquare, Building2 } from "lucide-react";
+import { Users, Mail, MessageSquare, Building2, Eye } from "lucide-react";
 
 export default function AdminClients() {
   const navigate = useNavigate();
@@ -75,6 +75,13 @@ export default function AdminClients() {
                       <td className="px-6 py-4 text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</td>
                       <td className="px-6 py-4">
                         <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => navigate("/portal/dashboard", { state: { viewAsClient: { id: c.id, full_name: c.full_name, email: c.email } } })}
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1" />View Portal
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

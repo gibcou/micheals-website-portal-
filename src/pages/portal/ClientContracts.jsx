@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
@@ -7,19 +8,21 @@ import { FileSignature, ExternalLink, Download } from "lucide-react";
 import { downloadContractPdf } from "@/lib/pdf";
 
 export default function ClientContracts() {
+  const { effectiveClientId } = useOutletContext() || {};
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [viewing, setViewing] = useState(null);
 
   useEffect(() => {
+    if (!effectiveClientId) return;
     const load = async () => {
-      const { data, error } = await supabase.from("contracts").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("contracts").select("*").eq("client_id", effectiveClientId).order("created_at", { ascending: false });
       if (error) console.error("Error loading contracts", error);
       setContracts(data || []);
       setLoading(false);
     };
     load();
-  }, []);
+  }, [effectiveClientId]);
 
   if (loading) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;
 

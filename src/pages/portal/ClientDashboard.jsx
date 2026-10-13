@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import { supabase } from "@/lib/supabase/client";
 import { PageHeader, StatCard, StatusBadge, SectionCard, EmptyState } from "@/components/portal/Shared";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import RequestFormDialog from "@/components/portal/RequestFormDialog";
 import { ClipboardList, FileText, CreditCard, Calendar, MapPin, User, ArrowRight, Building2, Plus } from "lucide-react";
 
 export default function ClientDashboard() {
+  const { effectiveClientId } = useOutletContext() || {};
   const [estates, setEstates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ openRequests: 0, unpaidInvoices: 0, reports: 0 });
@@ -15,10 +16,12 @@ export default function ClientDashboard() {
   const [requestOpen, setRequestOpen] = useState(false);
 
   const load = async () => {
+    if (!effectiveClientId) return;
     try {
       const { data: ests, error: estateError } = await supabase
         .from('estates')
         .select('*')
+        .eq('client_id', effectiveClientId)
         .order('created_at', { ascending: false });
 
       if (estateError) console.error("Error fetching estates", estateError);
@@ -52,7 +55,7 @@ export default function ClientDashboard() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [effectiveClientId]);
 
   if (loading) return <DashboardSkeleton />;
   if (estates.length === 0) {
