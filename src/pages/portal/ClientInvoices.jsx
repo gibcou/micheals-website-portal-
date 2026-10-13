@@ -14,10 +14,10 @@ export default function ClientInvoices() {
     queryKey: ["portal", "invoices"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: estate, error: estateError } = await supabase.from('estates').select('id').eq('client_id', user.id).single();
-      if (estateError) console.error("Error fetching estate", estateError);
-      if (!estate) return [];
-      const { data: invs, error: invsError } = await supabase.from('invoices').select('*').eq('estate_id', estate.id).order('issue_date', { ascending: false }).limit(50);
+      const { data: estates, error: estateError } = await supabase.from('estates').select('id').eq('client_id', user.id);
+      if (estateError) console.error("Error fetching estates", estateError);
+      if (!estates || estates.length === 0) return [];
+      const { data: invs, error: invsError } = await supabase.from('invoices').select('*').in('estate_id', estates.map((e) => e.id)).order('issue_date', { ascending: false }).limit(50);
       if (invsError) console.error("Error fetching invoices", invsError);
       return invs || [];
     },
@@ -52,6 +52,7 @@ export default function ClientInvoices() {
               <div key={inv.id} className="p-5 flex items-center justify-between gap-4 hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => navigate(`/portal/invoices/${inv.id}`)}>
                 <div className="min-w-0">
                   <p className="text-foreground font-medium">{inv.invoice_number}</p>
+                  {inv.estate_name && <p className="text-xs text-primary mt-0.5">{inv.estate_name}</p>}
                   <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-muted-foreground">
                     {inv.description && <span className="truncate">{inv.description}</span>}
                     {inv.due_date && (<><span>·</span><span className="flex items-center gap-1"><Calendar className="h-3 w-3" />Due {inv.due_date}</span></>)}

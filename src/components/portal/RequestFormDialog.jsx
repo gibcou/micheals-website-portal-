@@ -8,14 +8,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
-// Shared "New Service Request" dialog for the client portal.
-export default function RequestFormDialog({ estate, open, onOpenChange, onCreated }) {
+// Shared "New Service Request" dialog for the client portal. Accepts the
+// client's full list of estates and shows a picker when there's more than
+// one; with exactly one it's auto-selected and no picker is shown.
+export default function RequestFormDialog({ estates, open, onOpenChange, onCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const [category, setCategory] = useState("Maintenance");
   const [priority, setPriority] = useState("medium");
+  const [estateId, setEstateId] = useState(estates?.[0]?.id || "");
+
+  const estate = (estates || []).find((e) => e.id === estateId) || estates?.[0];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!estate) return;
     setSubmitting(true);
     const form = new FormData(e.target);
     let photo_url;
@@ -45,7 +51,7 @@ export default function RequestFormDialog({ estate, open, onOpenChange, onCreate
     if (onCreated) onCreated();
   };
 
-  if (!open || !estate) return null;
+  if (!open || !estates || estates.length === 0) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -54,6 +60,17 @@ export default function RequestFormDialog({ estate, open, onOpenChange, onCreate
           <DialogTitle className="font-display text-2xl">New Service Request</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {estates.length > 1 && (
+            <div className="space-y-2">
+              <Label>Property</Label>
+              <Select value={estateId} onValueChange={setEstateId}>
+                <SelectTrigger><SelectValue placeholder="Select a property" /></SelectTrigger>
+                <SelectContent>
+                  {estates.map((e) => <SelectItem key={e.id} value={e.id}>{e.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input id="title" name="title" required placeholder="e.g. Kitchen faucet repair" />

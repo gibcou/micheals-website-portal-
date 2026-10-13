@@ -12,10 +12,10 @@ export default function ClientReports() {
     queryKey: ["portal", "reports"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: estate, error: estateError } = await supabase.from('estates').select('id').eq('client_id', user.id).single();
-      if (estateError) console.error("Error fetching estate", estateError);
-      if (!estate) return [];
-      const { data: reps, error: repsError } = await supabase.from('weekly_reports').select('*').eq('estate_id', estate.id).order('week_of', { ascending: false }).limit(50);
+      const { data: estates, error: estateError } = await supabase.from('estates').select('id').eq('client_id', user.id);
+      if (estateError) console.error("Error fetching estates", estateError);
+      if (!estates || estates.length === 0) return [];
+      const { data: reps, error: repsError } = await supabase.from('weekly_reports').select('*').in('estate_id', estates.map((e) => e.id)).order('week_of', { ascending: false }).limit(50);
       if (repsError) console.error("Error fetching reports", repsError);
       return reps || [];
     },
@@ -51,6 +51,7 @@ export default function ClientReports() {
                 Week of {r.week_of}
               </div>
               <h3 className="font-display text-xl text-foreground mb-2">{r.title}</h3>
+              {r.estate_name && <p className="text-xs text-primary mb-2">{r.estate_name}</p>}
               {r.summary && <p className="text-sm text-muted-foreground line-clamp-3">{r.summary}</p>}
               {r.actions_taken && (
                 <div className="mt-4 pt-4 border-t border-border">

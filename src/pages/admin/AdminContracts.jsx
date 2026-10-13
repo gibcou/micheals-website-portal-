@@ -24,6 +24,7 @@ export default function AdminContracts() {
   const [renewingFrom, setRenewingFrom] = useState(null);
   const [saving, setSaving] = useState(false);
   const [actingOn, setActingOn] = useState(null);
+  const [viewing, setViewing] = useState(null);
 
   const load = async () => {
     const [{ data: contractData, error: contractError }, { data: clientData, error: clientError }, { data: estateData, error: estateError }] = await Promise.all([
@@ -164,7 +165,7 @@ export default function AdminContracts() {
           {filtered.map((c) => {
             const client = clients.find((cl) => cl.id === c.client_id);
             return (
-              <SectionCard key={c.id} className="p-5">
+              <SectionCard key={c.id} className="p-5 cursor-pointer hover:border-primary/40 transition-colors" onClick={() => setViewing(c)}>
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -185,17 +186,17 @@ export default function AdminContracts() {
                   <div className="flex items-center gap-2 shrink-0">
                     <StatusBadge status={c.status} />
                     {c.status === "draft" && (
-                      <Button variant="ghost" size="sm" disabled={actingOn === c.id} onClick={() => handleSend(c)}>
+                      <Button variant="ghost" size="sm" disabled={actingOn === c.id} onClick={(e) => { e.stopPropagation(); handleSend(c); }}>
                         {actingOn === c.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}Send for Signature
                       </Button>
                     )}
                     {c.status === "sent" && (
-                      <Button variant="ghost" size="sm" disabled={actingOn === c.id} onClick={() => handleMarkSigned(c)}>
+                      <Button variant="ghost" size="sm" disabled={actingOn === c.id} onClick={(e) => { e.stopPropagation(); handleMarkSigned(c); }}>
                         {actingOn === c.id ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Check className="h-3.5 w-3.5 mr-1" />}Mark Signed
                       </Button>
                     )}
                     {(needsRenewal(c) || c.status === "expired") && (
-                      <Button variant="ghost" size="sm" onClick={() => openRenew(c)}>
+                      <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); openRenew(c); }}>
                         <RefreshCw className="h-3.5 w-3.5 mr-1" />Renew
                       </Button>
                     )}
@@ -240,6 +241,76 @@ export default function AdminContracts() {
               <Button type="submit" disabled={saving || !form.client_id || !form.estate_id} className="bg-primary text-primary-foreground hover:bg-primary/90">{saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}{renewingFrom ? "Create Renewal" : "Create Contract"}</Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent className="bg-card border-border max-h-[85vh] overflow-y-auto">
+          {viewing && (() => {
+            const client = clients.find((cl) => cl.id === viewing.client_id);
+            const renewsContract = viewing.renews_contract_id ? contracts.find((c) => c.id === viewing.renews_contract_id) : null;
+            const renewedBy = contracts.find((c) => c.renews_contract_id === viewing.id);
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="font-display text-2xl">{viewing.title}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <StatusBadge status={needsRenewal(viewing) ? "expired" : viewing.status} />
+                    {viewing.contract_type === "renewal" && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border text-[10px] uppercase tracking-wider text-muted-foreground">
+                        <RefreshCw className="h-2.5 w-2.5" />Renewal
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><p className="text-xs uppercase tracking-wider text-muted-foreground">Estate</p><p className="text-foreground/90 mt-0.5">{viewing.estate_name}</p></div>
+                    <div><p className="text-xs uppercase tracking-wider text-muted-foreground">Client</p><p className="text-foreground/90 mt-0.5">{client?.full_name || client?.email || "—"}</p></div>
+                    <div><p className="text-xs uppercase tracking-wider text-muted-foreground">Start Date</p><p className="text-foreground/90 mt-0.5">{viewing.start_date || "—"}</p></div>
+                    <div><p className="text-xs uppercase tracking-wider text-muted-foreground">End Date</p><p className="text-foreground/90 mt-0.5">{viewing.end_date || "—"}</p></div>
+                    <div><p className="text-xs uppercase tracking-wider text-muted-foreground">Sent</p><p className="text-foreground/90 mt-0.5">{viewing.sent_at ? new Date(viewing.sent_at).toLocaleString() : "—"}</p></div>
+                    <div><p className="text-xs uppercase tracking-wider text-muted-foreground">Signed</p><p className="text-foreground/90 mt-0.5">{viewing.signed_at ? new Date(viewing.signed_at).toLocaleString() : "—"}</p></div>
+                  </div>
+                  {viewing.notes && (
+                    <div className="pt-4 border-t border-border">
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Notes</p>
+                      <p className="text-sm text-foreground/90 whitespace-pre-wrap">{viewing.notes}</p>
+                    </div>
+                  )}
+                  {(renewsContract || renewedBy) && (
+                    <div className="pt-4 border-t border-border space-y-1 text-sm">
+                      {renewsContract && <p className="text-muted-foreground">Renews <span className="text-foreground/90">{renewsContract.title}</span></p>}
+                      {renewedBy && <p className="text-muted-foreground">Renewed by <span className="text-foreground/90">{renewedBy.title}</span></p>}
+                    </div>
+                  )}
+                  {viewing.document_url && (
+                    <a href={viewing.document_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline block pt-2">
+                      View Document
+                    </a>
+                  )}
+                </div>
+                <DialogFooter>
+                  {viewing.status === "draft" && (
+                    <Button disabled={actingOn === viewing.id} onClick={() => { handleSend(viewing); setViewing(null); }} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                      <Send className="h-4 w-4 mr-1" />Send for Signature
+                    </Button>
+                  )}
+                  {viewing.status === "sent" && (
+                    <Button disabled={actingOn === viewing.id} onClick={() => { handleMarkSigned(viewing); setViewing(null); }} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                      <Check className="h-4 w-4 mr-1" />Mark Signed
+                    </Button>
+                  )}
+                  {(needsRenewal(viewing) || viewing.status === "expired") && (
+                    <Button onClick={() => { openRenew(viewing); setViewing(null); }} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                      <RefreshCw className="h-4 w-4 mr-1" />Renew
+                    </Button>
+                  )}
+                  <Button variant="ghost" onClick={() => setViewing(null)}>Close</Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

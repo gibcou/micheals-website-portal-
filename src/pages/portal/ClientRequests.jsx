@@ -16,38 +16,36 @@ export default function ClientRequests() {
   const { data, isLoading: loading } = useQuery({
     queryKey: ["portal", "requests"],
     queryFn: async () => {
-      const { data: est, error: estateError } = await supabase
+      const { data: estates, error: estateError } = await supabase
         .from('estates')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .order('created_at', { ascending: false });
 
       if (estateError) {
-        console.error("Error fetching estate", estateError);
-        return { estate: null, requests: [] };
+        console.error("Error fetching estates", estateError);
+        return { estates: [], requests: [] };
       }
-      
-      if (!est) {
-        return { estate: null, requests: [] };
+
+      if (!estates || estates.length === 0) {
+        return { estates: [], requests: [] };
       }
 
       const { data: reqs, error: reqsError } = await supabase
         .from('service_requests')
         .select('*')
-        .eq('estate_id', est.id)
+        .in('estate_id', estates.map((e) => e.id))
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (reqsError) {
         console.error("Error fetching service requests", reqsError);
-        return { estate: est, requests: [] };
+        return { estates, requests: [] };
       }
-      
-      return { estate: est, requests: reqs || [] };
+
+      return { estates, requests: reqs || [] };
     },
   });
-  const estate = data?.estate;
+  const estates = data?.estates || [];
   const requests = data?.requests || [];
 
   if (loading) return <div className="h-8 w-8 border-2 border-border border-t-primary rounded-full animate-spin" />;
@@ -79,8 +77,9 @@ export default function ClientRequests() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <h3 className="text-foreground font-medium">{r.title}</h3>
+                    {r.estate_name && <p className="text-xs text-primary mt-0.5">{r.estate_name}</p>}
                     {r.description && <p className="text-sm text-muted-foreground mt-1">{r.description}</p>}
-                    {r.photo && <RequestPhoto fileUri={r.photo} className="mt-3 h-40 w-56 rounded-md border border-border" />}
+                    {r.photo_url && <RequestPhoto fileUri={r.photo_url} className="mt-3 h-40 w-56 rounded-md border border-border" />}
                     <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-muted-foreground">
                       <span>{r.category}</span>
                       <span>·</span>
@@ -99,7 +98,7 @@ export default function ClientRequests() {
       </PullToRefresh>
 
       <RequestFormDialog
-        estate={estate}
+        estates={estates}
         open={open}
         onOpenChange={setOpen}
         onCreated={() => queryClient.invalidateQueries({ queryKey: ["portal", "requests"] })}
