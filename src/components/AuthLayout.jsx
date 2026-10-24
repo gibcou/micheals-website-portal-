@@ -3,13 +3,30 @@ import React from "react";
 const CARD_CLIP =
   "polygon(28px 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%, 0 28px)";
 
-export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
+export default function AuthLayout({
+  icon: Icon,
+  title,
+  subtitle,
+  footer,
+  children,
+  iconVariant = "primary",
+}) {
+  const isSuccess = iconVariant === "success";
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary mb-4 shadow-[0_0_24px_-4px_hsl(var(--primary)/0.7)] ring-1 ring-primary/40">
-            <Icon className="w-7 h-7 text-primary-foreground" aria-hidden="true" />
+          <div
+            className={
+              isSuccess
+                ? "inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/50 mb-4 shadow-[0_0_24px_-4px_rgba(16,185,129,0.7)]"
+                : "inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary mb-4 shadow-[0_0_24px_-4px_hsl(var(--primary)/0.7)] ring-1 ring-primary/40"
+            }
+          >
+            <Icon
+              className={isSuccess ? "w-7 h-7 text-emerald-400" : "w-7 h-7 text-primary-foreground"}
+              aria-hidden="true"
+            />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground mt-2">{subtitle}</p>}
