@@ -11,8 +11,14 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
           <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground mt-2">{subtitle}</p>}
         </div>
-        <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
-          {children}
+        <div className="relative">
+          <div className="pointer-events-none absolute -inset-8 -z-10 overflow-hidden rounded-[2.5rem]" aria-hidden="true">
+            <div className="absolute -top-10 -left-10 h-56 w-56 rounded-full bg-primary/25 blur-3xl" />
+            <div className="absolute -bottom-10 -right-10 h-56 w-56 rounded-full bg-accent/50 blur-3xl" />
+          </div>
+          <div className="relative bg-card/40 backdrop-blur-xl rounded-2xl border border-white/10 shadow-2xl shadow-black/40 p-8">
+            {children}
+          </div>
         </div>
         {footer && (
           <p className="text-center text-sm text-muted-foreground mt-6">{footer}</p>
