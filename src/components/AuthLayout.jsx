@@ -40,11 +40,17 @@ export default function AuthLayout({
             className="pointer-events-none absolute -bottom-12 -right-12 h-56 w-56 rounded-full bg-accent/70 blur-3xl"
             aria-hidden="true"
           />
-          <div
-            className="relative bg-card/40 backdrop-blur-xl border border-primary/20 shadow-2xl shadow-black/40 p-8"
-            style={{ clipPath: CARD_CLIP }}
-          >
-            {children}
+          {/*
+            clip-path and backdrop-filter on the SAME element is a known
+            browser rendering conflict -- the blur silently fails to
+            composite in several engines when both are present together.
+            So the shape (clip-path + shadow) lives on this outer div,
+            and the actual glass blur lives on a plain inner div with no
+            clip-path of its own; the outer div's clip-path still visually
+            trims the inner content to the cut-corner shape.
+          */}
+          <div className="relative shadow-2xl shadow-black/40" style={{ clipPath: CARD_CLIP }}>
+            <div className="bg-card/40 backdrop-blur-xl p-8">{children}</div>
           </div>
           {/* Thin gold seam tracing the cut corners, echoing the folded-edge look */}
           <div
