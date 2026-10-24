@@ -56,6 +56,28 @@
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(0 0% 28%);
   }
+
+  /*
+    Browsers force a white (or pale yellow) background on autofilled
+    inputs, and setting background-color directly on them doesn't
+    override it -- Chrome ignores it. The only reliable override is an
+    absurdly large inset box-shadow, which paints over the native fill
+    with our own color instead. Using an alpha color here (rather than
+    solid black) lets whatever the input is sitting on top of show
+    through, keeping it looking like a translucent well rather than a
+    flat block. The 9999s background-color transition is a second trick
+    that stops the native color from flashing before this applies.
+  */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.45) inset !important;
+    box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.45) inset !important;
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    caret-color: hsl(var(--foreground));
+    transition: background-color 9999s ease-in-out 0s;
+  }
 }
 
 @layer base {
