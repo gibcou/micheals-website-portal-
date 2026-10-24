@@ -32,8 +32,15 @@ export default function AuthLayout({
           {subtitle && <p className="text-muted-foreground mt-2">{subtitle}</p>}
         </div>
         <div className="relative isolate">
+          {/* Ambient color behind the glass -- one big centered glow plus two
+              corner accents, so the blur has something to catch across the
+              whole card, not just at the edges. */}
           <div
-            className="pointer-events-none absolute -top-16 -left-16 h-72 w-72 rounded-full bg-primary/70 blur-3xl"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/60 blur-3xl"
+            aria-hidden="true"
+          />
+          <div
+            className="pointer-events-none absolute -top-16 -left-16 h-72 w-72 rounded-full bg-primary/80 blur-3xl"
             aria-hidden="true"
           />
           <div
@@ -49,15 +56,34 @@ export default function AuthLayout({
             clip-path of its own; the outer div's clip-path still visually
             trims the inner content to the cut-corner shape.
           */}
-          <div className="relative shadow-2xl shadow-black/40" style={{ clipPath: CARD_CLIP }}>
-            <div className="bg-card/25 backdrop-blur-2xl p-8">{children}</div>
+          <div className="relative shadow-2xl shadow-black/50" style={{ clipPath: CARD_CLIP }}>
+            <div
+              className="relative bg-card/20 backdrop-blur-2xl backdrop-saturate-150 p-8"
+              style={{ overflow: "hidden" }}
+            >
+              {/* Specular sheen: a bright diagonal highlight across the
+                  glass, the one "glass" cue that reads reliably even if a
+                  browser's backdrop-filter support or GPU compositing is
+                  weak -- it's a plain gradient, not a blur effect. */}
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 22%, rgba(255,255,255,0) 45%)",
+                }}
+                aria-hidden="true"
+              />
+              <div className="relative">{children}</div>
+            </div>
           </div>
-          {/* Thin gold seam tracing the cut corners, echoing the folded-edge look */}
+          {/* Rim light: brighter along the top edge like light catching the
+              glass, fading to the gold seam at the bottom. */}
           <div
             className="pointer-events-none absolute inset-0"
             style={{
               clipPath: CARD_CLIP,
-              boxShadow: "inset 0 0 0 1.5px hsl(var(--primary) / 0.55)",
+              boxShadow:
+                "inset 0 1px 0 0 rgba(255,255,255,0.5), inset 0 0 0 1.5px hsl(var(--primary) / 0.55)",
             }}
             aria-hidden="true"
           />
