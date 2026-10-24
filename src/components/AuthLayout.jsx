@@ -57,8 +57,15 @@ export default function AuthLayout({
             trims the inner content to the cut-corner shape.
           */}
           <div className="relative shadow-2xl shadow-black/50" style={{ clipPath: CARD_CLIP }}>
+            {/*
+              The base tint is white, not the dark card color -- a dark
+              tint over a dark backdrop just reads as "dark card", no
+              matter how much blur is behind it. A light tint is what
+              makes it look like clear material with color showing
+              through, rather than a brown box.
+            */}
             <div
-              className="relative bg-card/20 backdrop-blur-2xl backdrop-saturate-150 p-8"
+              className="relative bg-white/[0.06] backdrop-blur-2xl backdrop-saturate-150 p-8"
               style={{ overflow: "hidden" }}
             >
               {/* Specular sheen: a bright diagonal highlight across the
@@ -69,21 +76,22 @@ export default function AuthLayout({
                 className="pointer-events-none absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 22%, rgba(255,255,255,0) 45%)",
+                    "linear-gradient(125deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.12) 18%, rgba(255,255,255,0) 38%)",
                 }}
                 aria-hidden="true"
               />
               <div className="relative">{children}</div>
             </div>
           </div>
-          {/* Rim light: brighter along the top edge like light catching the
-              glass, fading to the gold seam at the bottom. */}
+          {/* A crisp, bright edge all the way around is what sells "this is
+              a distinct pane of material", not just a color wash -- plus
+              the gold seam just inside it as a brand accent. */}
           <div
             className="pointer-events-none absolute inset-0"
             style={{
               clipPath: CARD_CLIP,
               boxShadow:
-                "inset 0 1px 0 0 rgba(255,255,255,0.5), inset 0 0 0 1.5px hsl(var(--primary) / 0.55)",
+                "inset 0 0 0 1px rgba(255,255,255,0.55), inset 0 0 0 2.5px hsl(var(--primary) / 0.4)",
             }}
             aria-hidden="true"
           />
