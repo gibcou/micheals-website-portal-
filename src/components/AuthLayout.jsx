@@ -19,19 +19,51 @@ export default function AuthLayout({ title, subtitle, footer, children }) {
             className="pointer-events-none absolute -bottom-16 -right-16 h-72 w-72 rounded-full bg-accent blur-3xl"
             aria-hidden="true"
           />
-          <div className="relative rounded-[2rem] shadow-2xl shadow-black/50 overflow-hidden">
+          <div
+            className="relative rounded-[2rem] overflow-hidden"
+            style={{
+              boxShadow:
+                "0 25px 50px -12px rgba(0,0,0,0.6), 0 0 70px -15px hsl(var(--primary) / 0.5)",
+            }}
+          >
             {/* Light base tint, not dark -- a dark tint over a dark
                 backdrop just reads as "dark card". A light tint reads as
-                clear material with color showing through it. */}
-            <div className="relative bg-white/[0.06] backdrop-blur-2xl backdrop-saturate-150 p-8">
-              {/* Specular sheen: a plain diagonal highlight, the one glass
-                  cue that renders reliably regardless of backdrop-filter
-                  support. */}
+                clear material with color showing through it. Pushed the
+                blur/saturation further than Tailwind's named scale goes. */}
+            <div
+              className="relative bg-white/[0.09] p-8"
+              style={{ backdropFilter: "blur(56px) saturate(200%)", WebkitBackdropFilter: "blur(56px) saturate(200%)" }}
+            >
+              {/* Frosted grain: a faint noise texture is what makes blur
+                  read as "frosted glass" rather than just "soft focus" --
+                  real frosted/etched glass scatters light unevenly, a
+                  smooth blur alone doesn't capture that. */}
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.05]"
+                style={{
+                  backgroundImage:
+                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+                  mixBlendMode: "overlay",
+                }}
+                aria-hidden="true"
+              />
+              {/* Specular sheen: a broad diagonal highlight plus a
+                  tighter, brighter glint near the top-left corner --
+                  the one glass cue that renders reliably regardless of
+                  backdrop-filter support. */}
               <div
                 className="pointer-events-none absolute inset-0"
                 style={{
                   background:
-                    "linear-gradient(125deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.12) 18%, rgba(255,255,255,0) 38%)",
+                    "linear-gradient(125deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.14) 20%, rgba(255,255,255,0) 42%)",
+                }}
+                aria-hidden="true"
+              />
+              <div
+                className="pointer-events-none absolute -top-10 -left-10 h-40 w-40 rounded-full"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 70%)",
                 }}
                 aria-hidden="true"
               />
