@@ -2,13 +2,13 @@
   "name": "Prestige Estate Management",
   "short_name": "Prestige",
   "description": "Prestige Estate Management client portal",
-  "start_url": "/",
+  "start_url": "/clientportal/",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#121212",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/clientportal/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

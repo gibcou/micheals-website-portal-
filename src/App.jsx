@@ -80,7 +80,9 @@ const router = createBrowserRouter([
     path: "*",
     element: <PageNotFound />,
   },
-]);
+], {
+  basename: "/clientportal",
+});
 
 import { AuthProvider } from "@/lib/AuthContext";
 
