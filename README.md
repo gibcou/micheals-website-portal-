@@ -47,7 +47,7 @@ npm install
 
     ```
     VITE_SUPABASE_URL="your-supabase-url"
-    VITE_SUPABASE_PUBLISHABLE_KEY="your-supabase-anon-key"
+    VITE_SUPABASE_ANON_KEY="your-supabase-anon-key"
     ```
 
 ### 4. Run the application
