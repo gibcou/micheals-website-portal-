@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   InputOTP,
   InputOTPGroup,
@@ -30,6 +31,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [otpEmail, setOtpEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [resendIn, setResendIn] = useState(0);
@@ -132,7 +134,7 @@ export default function Login() {
       : {
           icon: LogIn,
           title: "Welcome back",
-          subtitle: "Enter your credentials to access your account",
+          subtitle: "Enter your credentials to access your secure account",
         };
 
   return (
@@ -143,7 +145,7 @@ export default function Login() {
           <>
             Don't have an account?{" "}
             <Link to={"/register"} className="text-primary font-medium hover:underline">
-              Create one
+              Sign Up
             </Link>
           </>
         ) : undefined
@@ -176,12 +178,7 @@ export default function Login() {
               </div>
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-                  Forgot password?
-                </Link>
-              </div>
+              <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 <Input
@@ -207,6 +204,18 @@ export default function Login() {
                   )}
                 </button>
               </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
+                <Checkbox
+                  checked={rememberMe}
+                  onCheckedChange={setRememberMe}
+                />
+                Remember me
+              </label>
+              <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                Forgot password?
+              </Link>
             </div>
             <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
               {loading ? (
