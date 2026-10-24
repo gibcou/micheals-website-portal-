@@ -5,18 +5,17 @@ export default function AuthLayout({ title, subtitle, footer, children }) {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="relative isolate">
-          {/* Ambient color behind the glass so the blur has something to
-              catch across the whole card. */}
+          {/* Ambient color behind the glass, corners only -- a large
+              centered blob was washing out the title/subtitle text where
+              it crossed them and reading as a muddy smear rather than
+              glass, so this is scoped to the corners where there's no
+              text sitting on top of it. */}
           <div
-            className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/60 blur-3xl"
+            className="pointer-events-none absolute -top-14 -left-14 h-64 w-64 rounded-full bg-primary/60 blur-3xl"
             aria-hidden="true"
           />
           <div
-            className="pointer-events-none absolute -top-16 -left-16 h-72 w-72 rounded-full bg-primary/80 blur-3xl"
-            aria-hidden="true"
-          />
-          <div
-            className="pointer-events-none absolute -bottom-16 -right-16 h-72 w-72 rounded-full bg-accent blur-3xl"
+            className="pointer-events-none absolute -bottom-14 -right-14 h-64 w-64 rounded-full bg-accent/90 blur-3xl"
             aria-hidden="true"
           />
           <div
@@ -71,9 +70,18 @@ export default function AuthLayout({ title, subtitle, footer, children }) {
                 {(title || subtitle) && (
                   <div className="text-center mb-8">
                     {title && (
-                      <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
+                      <h1
+                        className="text-3xl font-bold tracking-tight text-foreground"
+                        style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}
+                      >
+                        {title}
+                      </h1>
                     )}
-                    {subtitle && <p className="text-muted-foreground mt-2">{subtitle}</p>}
+                    {subtitle && (
+                      <p className="mt-2 text-white/70" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.5)" }}>
+                        {subtitle}
+                      </p>
+                    )}
                   </div>
                 )}
                 {children}

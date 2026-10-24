@@ -57,8 +57,12 @@ export default function Login() {
     }
   };
 
+  // Darker / more opaque than the glass card around it, like a recessed
+  // well cut into the glass -- the card's own translucent tint was too
+  // close in brightness to a lighter pill, so fields barely stood out
+  // and placeholder text was hard to read.
   const pillInputClass =
-    "h-14 rounded-full pl-6 pr-12 bg-white/10 border-white/15 text-foreground placeholder:text-muted-foreground focus-visible:ring-primary/50";
+    "h-14 rounded-full pl-6 pr-12 bg-black/30 border-white/10 text-foreground placeholder:text-white/50 focus-visible:ring-primary/50";
 
   return (
     <AuthLayout
