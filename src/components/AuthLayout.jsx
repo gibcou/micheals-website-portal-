@@ -1,7 +1,7 @@
 import React from "react";
 
 const CARD_CLIP =
-  "polygon(28px 0, 100% 0, 100% calc(100% - 28px), calc(100% - 28px) 100%, 0 100%, 0 28px)";
+  "polygon(56px 0, 100% 0, 100% calc(100% - 56px), calc(100% - 56px) 100%, 0 100%, 0 56px)";
 
 export default function AuthLayout({
   icon: Icon,
@@ -33,11 +33,11 @@ export default function AuthLayout({
         </div>
         <div className="relative isolate">
           <div
-            className="pointer-events-none absolute -top-12 -left-12 h-56 w-56 rounded-full bg-primary/50 blur-3xl"
+            className="pointer-events-none absolute -top-16 -left-16 h-72 w-72 rounded-full bg-primary/70 blur-3xl"
             aria-hidden="true"
           />
           <div
-            className="pointer-events-none absolute -bottom-12 -right-12 h-56 w-56 rounded-full bg-accent/70 blur-3xl"
+            className="pointer-events-none absolute -bottom-16 -right-16 h-72 w-72 rounded-full bg-accent blur-3xl"
             aria-hidden="true"
           />
           {/*
@@ -50,14 +50,14 @@ export default function AuthLayout({
             trims the inner content to the cut-corner shape.
           */}
           <div className="relative shadow-2xl shadow-black/40" style={{ clipPath: CARD_CLIP }}>
-            <div className="bg-card/40 backdrop-blur-xl p-8">{children}</div>
+            <div className="bg-card/25 backdrop-blur-2xl p-8">{children}</div>
           </div>
           {/* Thin gold seam tracing the cut corners, echoing the folded-edge look */}
           <div
             className="pointer-events-none absolute inset-0"
             style={{
               clipPath: CARD_CLIP,
-              boxShadow: "inset 0 0 0 1px hsl(var(--primary) / 0.35)",
+              boxShadow: "inset 0 0 0 1.5px hsl(var(--primary) / 0.55)",
             }}
             aria-hidden="true"
           />
