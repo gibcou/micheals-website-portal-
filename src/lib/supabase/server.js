@@ -8,10 +8,25 @@ import { cookies } from "next/headers";
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // Same reasoning as client.js: createServerClient throws immediately
+    // on a missing url/key, which would crash every Server Component that
+    // calls this -- i.e. the whole site -- instead of just failing the
+    // Supabase call. Fall back to placeholders so rendering continues;
+    // real deployments always have these set via Vercel env vars.
+    console.warn(
+      "NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY are not set. Supabase calls will fail at runtime."
+    );
+  }
+
+  return createServerClient(
+    supabaseUrl || "https://placeholder.supabase.co",
+    supabaseAnonKey || "placeholder-anon-key",
     {
       cookies: {
         getAll() {
