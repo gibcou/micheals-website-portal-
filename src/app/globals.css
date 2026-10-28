@@ -94,7 +94,10 @@
   }
 
   @media (max-width: 767px) {
-    button {
+    /* Touch-target sizing for real buttons. Radix's Checkbox also renders
+       as a <button role="checkbox">, so without the exclusion this rule
+       stretched its fixed h-4 w-4 square into a tall rectangle. */
+    button:not([role="checkbox"]) {
       min-height: 44px;
     }
     * {
