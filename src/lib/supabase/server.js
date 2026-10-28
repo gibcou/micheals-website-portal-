@@ -1,23 +1,33 @@
-import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr'
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-export function createClient(request) {
-  const headers = new Headers()
+// Server Component / Route Handler client. Reads the session from cookies
+// that `middleware.js` keeps refreshed. Writes made from a Server Component
+// are a no-op (cookies can't be set there) -- that's fine as long as
+// middleware is doing the refreshing, same as the Supabase SSR docs note.
+export async function createClient() {
+  const cookieStore = await cookies();
 
-  const supabase = createServerClient(
-    process.env.VITE_SUPABASE_URL,
-    process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
       cookies: {
         getAll() {
-          return parseCookieHeader(request.headers.get('Cookie') ?? '');
+          return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            headers.append('Set-Cookie', serializeCookieHeader(name, value, options)))
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // Called from a Server Component -- ignorable since middleware
+            // refreshes the session on every request.
+          }
         },
       },
     }
-  )
-
-  return { supabase, headers }
+  );
 }

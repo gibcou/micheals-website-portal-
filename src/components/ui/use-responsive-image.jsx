@@ -1,3 +1,6 @@
+// @ts-nocheck
+"use client";
+
 import * as React from "react"
 import { useSize } from "../../hooks/use-size"
 import { cn } from "../../lib/utils"
