@@ -8,7 +8,7 @@ This is a client portal application built with React, Vite, and Supabase. It pro
 
 The application is built with a modern JavaScript stack:
 
-*   **Frontend**: A single-page application built with **React** and **Vite**. It uses **Tailwind CSS** for styling and **shadcn/ui** for UI components.
+*   **Frontend**: A **Next.js** (App Router) application. It uses **Tailwind CSS** for styling and **shadcn/ui** for UI components. Sessions are cookie-based via `@supabase/ssr`, refreshed in `middleware.js`, which also redirects signed-out visitors away from every route except `/login`, `/register`, `/forgot-password`, and `/reset-password`. The app is deployed under the `/clientportal` base path (see `next.config.js`).
 *   **Backend**: The backend is powered by **Supabase**. We use Supabase for:
     *   **Authentication**: Secure user authentication with email and password.
     *   **Database**: A PostgreSQL database to store all application data.
@@ -46,8 +46,9 @@ npm install
 5.  Create a new file named `.env.local` in the root of the project and add the following, replacing the values with your own:
 
     ```
-    VITE_SUPABASE_URL="your-supabase-url"
-    VITE_SUPABASE_ANON_KEY="your-supabase-anon-key"
+    NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
+    NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID="your-google-oauth-client-id"
     ```
 
 ### 4. Run the application
@@ -56,7 +57,7 @@ npm install
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`.
+The application will be available at `http://localhost:3000/clientportal`.
 
 ## Backend
 

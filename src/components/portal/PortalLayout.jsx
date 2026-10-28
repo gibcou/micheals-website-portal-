@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { Outlet, NavLink, useNavigate, useLocation, Navigate } from "react-router-dom";
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { takeNavState } from "@/lib/navState";
+import { PortalContextProvider } from "@/components/portal/PortalContext";
 import NotificationBell from "@/components/portal/NotificationBell";
 import { Home, ClipboardList, FileText, CreditCard, MessageSquare, Building2, LayoutDashboard, LogOut, Menu, Eye, ShieldCheck, Flame, Settings, Users, FileSignature, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,13 +37,13 @@ const adminNav = [
   { to: "/admin/messages", label: "Messages", icon: MessageSquare },
 ];
 
-export default function PortalLayout() {
+export default function PortalLayout({ children }) {
   const [user, setUser] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [viewAsClient, setViewAsClient] = useState(false);
   const [viewingClient, setViewingClient] = useState(null);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -52,23 +57,22 @@ export default function PortalLayout() {
             .single();
           setUser({ ...user, ...profile });
         } else {
-          navigate("/login");
+          router.push("/login");
         }
       } catch {
-        navigate("/login");
+        router.push("/login");
       }
     };
     fetchUser();
-  }, [navigate]);
+  }, [router]);
 
-  // Admin Clients links here with a specific client to view; pick it up once, then
-  // clear the router state so refreshing or navigating away doesn't re-trigger it.
+  // Admin Clients links here with a specific client to view -- pick it up
+  // once on mount, same "consume and clear" semantics the old react-router
+  // location.state version had.
   useEffect(() => {
-    if (location.state?.viewAsClient) {
-      setViewingClient(location.state.viewAsClient);
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location.state, location.pathname, navigate]);
+    const preset = takeNavState("viewAsClient");
+    if (preset) setViewingClient(preset);
+  }, []);
 
   const isAdmin = user?.role === "admin";
   const showClientPortal = !isAdmin || viewAsClient || !!viewingClient;
@@ -78,17 +82,24 @@ export default function PortalLayout() {
   const exitImpersonation = () => {
     setViewingClient(null);
     setViewAsClient(false);
-    navigate("/admin/clients");
+    router.push("/admin/clients");
   };
 
-  // Admin-only routes: clients are redirected to their portal
-  if (user && !isAdmin && location.pathname.startsWith("/admin")) {
-    return <Navigate to="/portal/dashboard" replace />;
+  // Admin-only routes: clients are redirected to their portal.
+  const isAdminRoute = pathname?.startsWith("/admin");
+  useEffect(() => {
+    if (user && !isAdmin && isAdminRoute) {
+      router.replace("/portal/dashboard");
+    }
+  }, [user, isAdmin, isAdminRoute, router]);
+
+  if (user && !isAdmin && isAdminRoute) {
+    return null;
   }
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/login");
+    router.push("/login");
   };
 
   return (
@@ -107,22 +118,25 @@ export default function PortalLayout() {
         </div>
 
         <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-          {nav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => setMobileOpen(false)}
-              className={({ isActive }) => cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
-                isActive
-                  ? "bg-primary/10 text-primary border border-primary/20"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50 border border-transparent"
-              )}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </NavLink>
-          ))}
+          {nav.map((item) => {
+            const isActive = pathname === item.to || pathname?.startsWith(`${item.to}/`);
+            return (
+              <Link
+                key={item.to}
+                href={item.to}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
+                  isActive
+                    ? "bg-primary/10 text-primary border border-primary/20"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50 border border-transparent"
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="px-3 py-4 border-t border-border">
@@ -144,7 +158,7 @@ export default function PortalLayout() {
                 }
                 setViewAsClient(!viewAsClient);
                 setMobileOpen(false);
-                navigate(!viewAsClient ? "/portal/dashboard" : "/admin/dashboard");
+                router.push(!viewAsClient ? "/portal/dashboard" : "/admin/dashboard");
               }}
               className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm text-muted-foreground hover:text-primary hover:bg-secondary/50 w-full transition-colors"
             >
@@ -192,7 +206,9 @@ export default function PortalLayout() {
         )}
 
         <main className="flex-1 px-4 sm:px-6 lg:px-10 pt-6 pb-8 sm:pt-8 max-w-6xl w-full mx-auto animate-fade-in">
-          <Outlet context={{ effectiveClientId, isImpersonating: !!viewingClient }} />
+          <PortalContextProvider value={{ effectiveClientId, isImpersonating: !!viewingClient }}>
+            {children}
+          </PortalContextProvider>
         </main>
       </div>
     </div>

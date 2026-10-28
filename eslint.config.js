@@ -1,60 +1,27 @@
-import globals from "globals";
-import pluginJs from "@eslint/js";
-import pluginReact from "eslint-plugin-react";
-import pluginReactHooks from "eslint-plugin-react-hooks";
-import pluginUnusedImports from "eslint-plugin-unused-imports";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 
-export default [
+const config = [
+  ...nextCoreWebVitals,
   {
-    files: [
-      "src/components/**/*.{js,mjs,cjs,jsx}",
-      "src/pages/**/*.{js,mjs,cjs,jsx}",
-      "src/Layout.jsx",
+    ignores: [
+      ".next/**",
+      "dist/**",
+      "node_modules/**",
+      "src/components/ui/**",
+      "src/hooks/**",
     ],
-    ignores: ["src/lib/**/*", "src/components/ui/**/*"],
-    ...pluginJs.configs.recommended,
-    ...pluginReact.configs.flat.recommended,
-    languageOptions: {
-      globals: globals.browser,
-      parserOptions: {
-        ecmaVersion: 2022,
-        sourceType: "module",
-        ecmaFeatures: {
-          jsx: true,
-        },
-      },
-    },
-    settings: {
-      react: {
-        version: "detect",
-      },
-    },
-    plugins: {
-      react: pluginReact,
-      "react-hooks": pluginReactHooks,
-      "unused-imports": pluginUnusedImports,
-    },
+  },
+  {
     rules: {
-      "no-unused-vars": "off",
-      "react/jsx-uses-vars": "error",
-      "react/jsx-uses-react": "error",
-      "unused-imports/no-unused-imports": "error",
-      "unused-imports/no-unused-vars": [
-        "warn",
-        {
-          vars: "all",
-          varsIgnorePattern: "^_",
-          args: "after-used",
-          argsIgnorePattern: "^_",
-        },
-      ],
-      "react/prop-types": "off",
-      "react/react-in-jsx-scope": "off",
-      "react/no-unknown-property": [
-        "error",
-        { ignore: ["cmdk-input-wrapper", "toast-close"] },
-      ],
-      "react-hooks/rules-of-hooks": "error",
+      // Pre-dates this rule (not part of the Vite project's eslint setup):
+      // the whole app loads its data with a `load()` function called from
+      // a mount-time useEffect, the standard pre-React-19-compiler pattern.
+      // Flagging every one of those would mean restructuring ~20 working
+      // data-fetching pages as part of a framework migration that is
+      // supposed to leave behavior unchanged.
+      "react-hooks/set-state-in-effect": "off",
     },
   },
 ];
+
+export default config;

@@ -1,5 +1,7 @@
+"use client";
+
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Bell, MessageSquare } from "lucide-react";
@@ -10,7 +12,7 @@ export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     const getUser = async () => {
@@ -57,7 +59,7 @@ export default function NotificationBell() {
       if (error) console.error("Error marking notification as read", error);
       load();
     }
-    if (n.link) navigate(n.link);
+    if (n.link) router.push(n.link);
   };
 
   return (
@@ -82,7 +84,7 @@ export default function NotificationBell() {
         {notifications.length === 0 ? (
           <div className="px-4 py-8 text-center">
             <MessageSquare className="h-6 w-6 text-muted-foreground/40 mx-auto mb-2" />
-            <p className="text-xs text-muted-foreground">You're all caught up.</p>
+            <p className="text-xs text-muted-foreground">You&apos;re all caught up.</p>
           </div>
         ) : (
           <div className="max-h-80 overflow-y-auto divide-y divide-border">
