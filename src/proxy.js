@@ -65,16 +65,28 @@ export async function proxy(request) {
   if (!user && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return redirectWithRefreshedCookies(url, response);
   }
 
   if (user && isPublicPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
-    return NextResponse.redirect(url);
+    return redirectWithRefreshedCookies(url, response);
   }
 
   return response;
+}
+
+// getUser() can silently refresh the session, which attaches the new
+// cookies to `response` via setAll(). A bare NextResponse.redirect(url)
+// is a brand new response that doesn't carry those over, so the browser
+// keeps resending the stale cookie, triggers another refresh on the next
+// request, and never actually gets signed in -- a redirect loop. Copy the
+// refreshed cookies onto the redirect response so they stick.
+function redirectWithRefreshedCookies(url, response) {
+  const redirectResponse = NextResponse.redirect(url);
+  response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+  return redirectResponse;
 }
 
 export const config = {
