@@ -101,8 +101,11 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.svg, manifest.json (static portal assets)
+     * - api/ (route handlers authenticate themselves -- e.g. a shared
+     *   secret header for a server-to-server webhook call, which has no
+     *   user session cookie to redirect-to-login on in the first place)
      * - any file with an extension (images, etc.)
      */
-    "/((?!_next/static|_next/image|favicon.svg|manifest.json|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.svg|manifest.json|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
