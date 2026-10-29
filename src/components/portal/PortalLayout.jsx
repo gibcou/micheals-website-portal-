@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { useSupabase } from "@/lib/supabase/provider";
 import { takeNavState } from "@/lib/navState";
 import { PortalContextProvider } from "@/components/portal/PortalContext";
 import NotificationBell from "@/components/portal/NotificationBell";
@@ -38,7 +39,18 @@ const adminNav = [
 ];
 
 export default function PortalLayout({ children }) {
-  const [user, setUser] = useState(null);
+  // The middleware already did a network-validated getUser() check before
+  // this page was ever served, so re-doing that call here would just be a
+  // second, redundant round trip. Reuse SupabaseProvider's session instead
+  // (a fast local read, kept fresh via onAuthStateChange) and only fetch
+  // the `profiles` row -- the data getUser() doesn't carry -- separately.
+  // Keeping that profile fetch out of `user` means effectiveClientId
+  // (which only ever needed authUser.id) is available a full round trip
+  // earlier, so a page's own data fetch can start immediately instead of
+  // waiting on the profile row too.
+  const { user: authUser, isLoading: authLoading } = useSupabase();
+  const [profile, setProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [viewAsClient, setViewAsClient] = useState(false);
   const [viewingClient, setViewingClient] = useState(null);
@@ -46,25 +58,33 @@ export default function PortalLayout({ children }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          setUser({ ...user, ...profile });
-        } else {
-          router.push("/login");
-        }
-      } catch {
-        router.push("/login");
-      }
+    if (authLoading) return;
+    if (!authUser) {
+      router.push("/login");
+      return;
+    }
+    let cancelled = false;
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', authUser.id)
+      .single()
+      .then(({ data }) => {
+        if (!cancelled) setProfile(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false);
+      });
+    return () => {
+      cancelled = true;
     };
-    fetchUser();
-  }, [router]);
+  }, [authUser, authLoading, router]);
+
+  const user = useMemo(
+    () => (authUser ? { ...authUser, ...profile } : null),
+    [authUser, profile]
+  );
 
   // Admin Clients links here with a specific client to view -- pick it up
   // once on mount, same "consume and clear" semantics the old react-router
@@ -85,15 +105,17 @@ export default function PortalLayout({ children }) {
     router.push("/admin/clients");
   };
 
-  // Admin-only routes: clients are redirected to their portal.
+  // Admin-only routes: clients are redirected to their portal. Gated on
+  // profileLoading so this doesn't fire on an admin before their role is
+  // known (isAdmin defaults to false until the profile row loads).
   const isAdminRoute = pathname?.startsWith("/admin");
   useEffect(() => {
-    if (user && !isAdmin && isAdminRoute) {
+    if (!profileLoading && user && !isAdmin && isAdminRoute) {
       router.replace("/portal/dashboard");
     }
-  }, [user, isAdmin, isAdminRoute, router]);
+  }, [profileLoading, user, isAdmin, isAdminRoute, router]);
 
-  if (user && !isAdmin && isAdminRoute) {
+  if (!profileLoading && user && !isAdmin && isAdminRoute) {
     return null;
   }
 
